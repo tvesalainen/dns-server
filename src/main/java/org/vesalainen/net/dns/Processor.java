@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -114,13 +115,13 @@ System.out.println("Zone hit "+question);
         {
             if (recursionDesired)
             {
-                if (Cache.getCache(question, answer))
+                if (Cache.getFromCache(question, answer))
                 {
                     answer.setAuthorative(false);
                 }
                 else
                 {
-                    List<InetSocketAddress> nsList = Cache.getNameServerFor(question.getQName());
+                    Set<InetSocketAddress> nsList = Cache.getNameServerFor(question.getQName());
                     nsList.addAll(Cache.getNameServers());
                     int timeOut = 1;
                     for (InetSocketAddress nameServer : nsList)

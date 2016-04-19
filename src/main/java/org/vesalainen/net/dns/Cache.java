@@ -27,9 +27,12 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +67,8 @@ public class Cache implements Runnable
     private static File config;
     private static Dns dns;
     private static ObjectFactory factory = new ObjectFactory();
+    private static Clock clock = Clock.systemUTC();
+    private static boolean keepLast;
 
     public Cache(File conf) throws JAXBException, UnknownHostException, IllegalNetMaskException, IOException, RCodeException
     {
@@ -71,6 +76,8 @@ public class Cache implements Runnable
         JAXBContext jaxbCtx = JAXBContext.newInstance(PACKAGE);
         Unmarshaller unmarshaller = jaxbCtx.createUnmarshaller();
         dns = (Dns) unmarshaller.unmarshal(config); //NOI18N
+        Boolean isKeepLast = dns.isKeepLast();
+        keepLast = isKeepLast != null && isKeepLast;
         init();
         initZones();
         initInnerZones();
@@ -433,64 +440,93 @@ public class Cache implements Runnable
         }
         return found;
     }
-    public static boolean getCache(Question question, Answer answer)
+    public static boolean getFromCache(Question question, Answer answer)
     {
         boolean found = false;
+        long current = System.currentTimeMillis();
         Set<ResourceRecord> set = cache.get(question);
         if (set != null)
         {
-            Set removables = new ConcurrentSkipListSet<ResourceRecord>();
-            long current = System.currentTimeMillis();
-            for (ResourceRecord rr : set)
+            boolean keptLast = false;
+            Iterator<ResourceRecord> iterator = set.iterator();
+            while (iterator.hasNext())
             {
+                ResourceRecord rr = iterator.next();
                 if (rr.expired(current))
                 {
-                    removables.add(rr);
+                    if (!keepLast || iterator.hasNext())
+                    {
+                        iterator.remove();
+                    }
+                    else
+                    {
+                        keptLast =  true;
+                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            set.removeAll(removables);
-            found = !set.isEmpty() || found;
+            if (!keptLast)
+            {
+                found = found || !set.isEmpty();
+            }
             answer.getAnswers().addAll(set);
         }
         set = cache.get(question.getCName());
         if (set != null)
         {
-            Set removables = new ConcurrentSkipListSet<ResourceRecord>();
-            long current = System.currentTimeMillis();
-            for (ResourceRecord rr : set)
+            boolean keptLast = false;
+            Iterator<ResourceRecord> iterator = set.iterator();
+            while (iterator.hasNext())
             {
+                ResourceRecord rr = iterator.next();
                 if (rr.expired(current))
                 {
-                    removables.add(rr);
+                    if (!keepLast || iterator.hasNext())
+                    {
+                        iterator.remove();
+                    }
+                    else
+                    {
+                        keptLast =  true;
+                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            set.removeAll(removables);
-            found = !set.isEmpty() || found;
+            if (!keptLast)
+            {
+                found = found || !set.isEmpty();
+            }
             answer.getAnswers().addAll(set);
         }
         return found;
     }
 
-    public static List<InetSocketAddress> getNameServerFor(DomainName domain)
+    public static Set<InetSocketAddress> getNameServerFor(DomainName domain)
     {
 
-        List<InetSocketAddress> res = new ArrayList<InetSocketAddress>();
+        Set<InetSocketAddress> res = new HashSet<>();
         DomainName baseDomain = domain;
         while (baseDomain.getLevel() > 1)
         {
             // NS
             Question qNS = new Question(baseDomain, Constants.NS);
             Answer answer = new Answer();
-            if (getCache(qNS, answer))
+            if (getFromCache(qNS, answer))
             {
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answer.getAnswers())
                 {
                     NS ns = (NS) rrNS.getRData();
                     Question qA = new Question(ns.getNsDName(), Constants.A);
-                    getCache(qA, answer2);
+                    getFromCache(qA, answer2);
                     Question qAAAA = new Question(ns.getNsDName(), Constants.AAAA);
-                    getCache(qAAAA, answer2);
+                    getFromCache(qAAAA, answer2);
                     for (ResourceRecord rrA : answer2.getAnswers())
                     {
                         A a = (A) rrA.getRData();
@@ -501,16 +537,16 @@ public class Cache implements Runnable
             // SOA
             Question qSOA = new Question(baseDomain, Constants.SOA);
             Answer answerSOA = new Answer();
-            if (getCache(qSOA, answerSOA))
+            if (getFromCache(qSOA, answerSOA))
             {
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answerSOA.getAnswers())
                 {
                     SOA soa = (SOA) rrNS.getRData();
                     Question qA = new Question(soa.getMName(), Constants.A);
-                    getCache(qA, answer2);
+                    getFromCache(qA, answer2);
                     Question qAAAA = new Question(soa.getMName(), Constants.AAAA);
-                    getCache(qAAAA, answer2);
+                    getFromCache(qAAAA, answer2);
                     for (ResourceRecord rrA : answer2.getAnswers())
                     {
                         A a = (A) rrA.getRData();
@@ -524,35 +560,33 @@ public class Cache implements Runnable
     }
     private void cleanup()
     {
-        Set qqRemovables = new ConcurrentSkipListSet<Question>();
-        for (Question qq : cache.keySet())
+        long current = System.currentTimeMillis();
+        for (Map.Entry<Question, Set<ResourceRecord>> e : cache.entrySet())
         {
-            Set<ResourceRecord> set = cache.get(qq);
-            Set rrRemovables = new ConcurrentSkipListSet<ResourceRecord>();
-            long current = System.currentTimeMillis();
-            for (ResourceRecord rr : set)
+            Set<ResourceRecord> set = e.getValue();
+            Iterator<ResourceRecord> iterator = set.iterator();
+            while (iterator.hasNext())
             {
+                ResourceRecord rr = iterator.next();
                 if (rr.expired(current))
                 {
-                    rrRemovables.add(rr);
+                    if (!keepLast || iterator.hasNext())
+                    {
+                        iterator.remove();
+                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            set.removeAll(rrRemovables);
-            if (set.isEmpty())
-            {
-                qqRemovables.add(qq);
-            }
         }
-        cache.remove(qqRemovables);
     }
 
     public static void add(ResourceRecord rr)
     {
-        if (rr.getTtl() > 0)
-        {
-            rr.setExpires(new Date());
-            cache.add(rr.getQuestion(), rr);
-        }
+        rr.setExpires();
+        cache.add(rr.getQuestion(), rr);
     }
 
     /**
@@ -584,6 +618,16 @@ public class Cache implements Runnable
         return zoneTransferMessage.get(name);
     }
 
+    public static Clock getClock()
+    {
+        return clock;
+    }
+
+    public boolean keepLast()
+    {
+        return keepLast;
+    }
+    
     public static void main(String... args)
     {
         try

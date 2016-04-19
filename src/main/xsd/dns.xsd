@@ -45,6 +45,7 @@
                     </xsd:complexType>
                 </xsd:element>
             </xsd:sequence>
+            <xsd:attribute name="keep-last" type="xsd:boolean"/>
         </xsd:complexType>
     </xsd:element>
     <xsd:complexType name="ResourceRecord">
