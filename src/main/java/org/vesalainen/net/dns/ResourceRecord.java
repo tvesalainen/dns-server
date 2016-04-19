@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Date;
+import org.vesalainen.lang.Primitives;
 
 /**
  *
@@ -19,7 +20,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
     private Question question;
     private int ttl;
     private RData rData;
-    private Date expires;
+    private long expires = Long.MAX_VALUE;
 
     public ResourceRecord(DomainName domainName, int type, int ttl, RData rData)
     {
@@ -127,11 +128,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
 
     public boolean expired(long current)
     {
-        if (getExpires() != null)
-        {
-            return current > getExpires().getTime();
-        }
-        return false;
+        return current > expires;
     }
 
     @Override
@@ -184,14 +181,14 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         return rData;
     }
 
-    public void setExpires(Date now)
+    public void setExpires()
     {
-        expires = new Date(now.getTime()+ttl*1000);
+        expires = Cache.getClock().millis()+ttl*1000;
     }
     /**
      * @return the expires
      */
-    public Date getExpires()
+    public long getExpires()
     {
         return expires;
     }
@@ -218,14 +215,10 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         return hash;
     }
 
+    @Override
     public int compareTo(ResourceRecord rr)
     {
-        int rc = question.compareTo(rr.question);
-        if (rc == 0)
-        {
-            return rData.compareTo(rr.rData);
-        }
-        return rc;
+        return (int) Primitives.signum(expires - rr.expires);
     }
 
     public static void main(String[] args)
