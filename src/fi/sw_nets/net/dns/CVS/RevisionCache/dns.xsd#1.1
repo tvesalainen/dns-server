@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.sw-nets.fi/schema/dns"
+    xmlns:tns="http://www.sw-nets.fi/schema/dns"
+    elementFormDefault="qualified">
+    <xsd:element name="dns">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="name-server" maxOccurs="unbounded">
+                    <xsd:complexType>
+                        <xsd:attribute name="address" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="master" maxOccurs="unbounded">
+                    <xsd:complexType>
+                        <xsd:attribute name="address" type="xsd:string"/>
+                        <xsd:attribute name="domain" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="slave" maxOccurs="unbounded" minOccurs="0">
+                    <xsd:complexType>
+                        <xsd:attribute name="address" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="zone" maxOccurs="unbounded">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element name="outer" type="tns:ResourceRecord" minOccurs="0">
+
+                            </xsd:element>
+                            <xsd:element name="inner" type="tns:ResourceRecord" minOccurs="0">
+                            </xsd:element>
+                        </xsd:sequence>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="type" type="xsd:string" default="SOA"/>
+                        <xsd:attribute name="class" type="xsd:string" default="IN"/>
+                        <xsd:attribute name="ttl" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="mname" type="xsd:string"/>
+                        <xsd:attribute name="rname" type="xsd:string"/>
+                        <xsd:attribute name="serial" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="refresh" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="retry" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="expire" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="minimum" type="xsd:positiveInteger"/>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:complexType name="ResourceRecord">
+        <xsd:sequence>
+            <xsd:choice maxOccurs="unbounded">
+                <xsd:element name="a-rr">
+                    <xsd:complexType>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="type" type="xsd:string" default="A"/>
+                        <xsd:attribute name="class" type="xsd:string" default="IN"/>
+                        <xsd:attribute name="ttl" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="address" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="mx-rr">
+                    <xsd:complexType>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="type" type="xsd:string" default="MX"/>
+                        <xsd:attribute name="class" type="xsd:string" default="IN"/>
+                        <xsd:attribute name="ttl" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="preference" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="exchange" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="ns-rr">
+                    <xsd:complexType>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="type" type="xsd:string" default="NS"/>
+                        <xsd:attribute name="class" type="xsd:string" default="IN"/>
+                        <xsd:attribute name="ttl" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="nsdname" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="ptr-rr">
+                    <xsd:complexType>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="type" type="xsd:string" default="PTR"/>
+                        <xsd:attribute name="class" type="xsd:string" default="IN"/>
+                        <xsd:attribute name="ttl" type="xsd:positiveInteger"/>
+                        <xsd:attribute name="ptrdname" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:choice>
+        </xsd:sequence>
+        <xsd:attribute name="net" type="xsd:string"/>
+    </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,45 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+
+/**
+ *
+ * @author tkv
+ */
+public class Resolver
+{
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args)
+    {
+        try
+        {
+            DatagramSocket socket = new DatagramSocket(53);
+            InetSocketAddress master = new InetSocketAddress("192.168.0.167", 53);
+            QueryMessage query = new QueryMessage(socket.getLocalSocketAddress(), "hs.fi", Constants.A);
+            byte[] data = query.toByteArray();
+            DatagramPacket packet = new DatagramPacket(data, data.length);
+            packet.setSocketAddress(master);
+            socket.send(packet);
+
+            data = new byte[512];
+            packet = new DatagramPacket(data, data.length);
+            socket.receive(packet);
+            Message message = new Message(packet.getData());
+            System.err.println(packet.getSocketAddress());
+            System.err.println(message);
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+    }
+}

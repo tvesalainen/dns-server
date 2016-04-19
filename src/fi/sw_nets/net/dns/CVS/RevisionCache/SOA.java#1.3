@@ -1,0 +1,174 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author tkv
+ */
+public class SOA implements RData
+{
+    private DomainName mName;
+    private DomainName rName;
+    private int serial;
+    private int refresh;
+    private int retry;
+    private int expire;
+    private int minimum;
+
+    public SOA(
+        String mName,
+        String rName,
+        int serial,
+        int refresh,
+        int retry,
+        int expire,
+        int minimum
+            )
+    {
+        this.mName = new DomainName(mName);
+        this.rName = new DomainName(rName);
+        this.serial = serial;
+        this.refresh = refresh;
+        this.retry = retry;
+        this.expire = expire;
+        this.minimum = minimum;
+    }
+    public SOA(MessageReader reader) throws IOException
+    {
+        mName = reader.readDomainName();
+        rName = reader.readDomainName();
+        serial = reader.read32();
+        refresh = reader.read32();
+        retry = reader.read32();
+        expire = reader.read32();
+        minimum = reader.read32();
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.writeDomainName(mName);
+        writer.writeDomainName(rName);
+        writer.write32(serial);
+        writer.write32(refresh);
+        writer.write32(retry);
+        writer.write32(expire);
+        writer.write32(minimum);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "SOA("+getMName().toString()+" "+getRName().toString()+" "+getSerial()+" "+getRefresh()+" "+getRetry()+" "+getExpire()+" "+getMinimum()+")";
+    }
+
+    /**
+     * @return the mName
+     */
+    public DomainName getMName()
+    {
+        return mName;
+    }
+
+    /**
+     * @return the rName
+     */
+    public DomainName getRName()
+    {
+        return rName;
+    }
+
+    /**
+     * @return the serial
+     */
+    public int getSerial()
+    {
+        return serial;
+    }
+
+    /**
+     * @return the refresh
+     */
+    public int getRefresh()
+    {
+        return refresh;
+    }
+
+    /**
+     * @return the retry
+     */
+    public int getRetry()
+    {
+        return retry;
+    }
+
+    /**
+     * @return the expire
+     */
+    public int getExpire()
+    {
+        return expire;
+    }
+
+    /**
+     * @return the minimum
+     */
+    public int getMinimum()
+    {
+        return minimum;
+    }
+
+    @Override
+    public boolean equals(Object oth)
+    {
+        if (oth instanceof SOA)
+        {
+            SOA soa = (SOA) oth;
+            return
+                mName.equals(soa.mName) &&
+                rName.equals(soa.rName) &&
+                serial == soa.serial &&
+                refresh == soa.refresh &&
+                retry == soa.retry &&
+                expire == soa.expire &&
+                minimum == soa.minimum;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 67 * hash + (this.mName != null ? this.mName.hashCode() : 0);
+        hash = 67 * hash + (this.rName != null ? this.rName.hashCode() : 0);
+        hash = 67 * hash + this.serial;
+        hash = 67 * hash + this.refresh;
+        hash = 67 * hash + this.retry;
+        hash = 67 * hash + this.expire;
+        hash = 67 * hash + this.minimum;
+        return hash;
+    }
+    
+    public int compareTo(RData oth)
+    {
+        if (oth instanceof SOA)
+        {
+            SOA soa = (SOA) oth;
+            return
+                mName.compareTo(soa.mName) + 10 *
+                rName.compareTo(soa.rName) + 100 *
+                (serial - soa.serial) + 1000 *
+                (refresh - soa.refresh) + 10000 *
+                (retry - soa.retry) + 100000 *
+                (expire - soa.expire) + 10000000 *
+                (minimum - soa.minimum);
+        }
+        return -1;
+    }
+
+}

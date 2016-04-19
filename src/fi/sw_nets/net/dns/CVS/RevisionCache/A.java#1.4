@@ -1,0 +1,86 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
+/**
+ *
+ * @author tkv
+ */
+public class A implements RData
+{
+    private static final long serialVersionUID = 1L;
+    protected InetSocketAddress address;
+
+    protected A()
+    {
+    }
+
+    public A(Inet4Address address)
+    {
+        this.address = new InetSocketAddress(address, 53);
+    }
+
+    public A(MessageReader reader) throws IOException
+    {
+        byte[] bb = new byte[4];
+        reader.read(bb);
+        InetAddress a = InetAddress.getByAddress(bb);
+        this.address = new InetSocketAddress(a, 53);
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.write(address.getAddress().getAddress());
+    }
+
+    @Override
+    public boolean equals(Object oth)
+    {
+        if (oth instanceof A)
+        {
+            A a = (A) oth;
+            return address.equals(a.address);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 67 * hash + (this.address != null ? this.address.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "A("+address.getAddress().getHostAddress()+")";
+    }
+
+    /**
+     * @return the address
+     */
+    public InetSocketAddress getAddress()
+    {
+        return address;
+    }
+
+    public int compareTo(RData oth)
+    {
+        if (oth instanceof A)
+        {
+            A a = (A) oth;
+            return address.toString().compareTo(a.address.toString());
+        }
+        return -1;
+    }
+
+}

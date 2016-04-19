@@ -1,0 +1,204 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+
+
+/**
+ *
+ * @author tkv
+ */
+public abstract class Processor implements Callable<Object>
+{
+    protected InetSocketAddress sender;
+    protected byte[] data;
+    public Processor()
+    {
+    }
+
+    public abstract void send(Message msg) throws IOException;
+    protected void processQuery(Message msg) throws SocketException, IOException, InterruptedException, RCodeException
+    {
+
+        switch (msg.getOpCode())
+        {
+            case Constants.OPCODE_QUERY:
+                break;
+            default:    
+                throw new RCodeException(msg.getOpCode()+" OPCODE not implemented", RCodeException.NOT_IMPLEMENTED);
+        }
+        Question question = msg.getQuestion();
+        switch (question.getQType())
+        {
+            case Constants.AXFR:
+                ResponseMessage zoneTransfer = Cache.getZoneTransfer(question.getQName());
+                if (zoneTransfer != null)
+                {
+                    zoneTransfer.setId(msg.getId());
+                    send(zoneTransfer);
+                }
+                else
+                {
+                    throw new RCodeException(question.getQName()+" zone not known", RCodeException.REFUSED);
+                }
+                break;
+            case Constants.A:
+            case Constants.MX:
+            case Constants.NS:
+            case Constants.ANY:
+            break;
+            default:
+                throw new RCodeException(question.getQType()+" QTYPE not implemented", RCodeException.NOT_IMPLEMENTED);
+        }
+        Set<ResourceRecord> set = Cache.resolveAuthorative(question, sender);
+        if (set != null && !set.isEmpty())
+        {
+            sendAnswer(msg, set, true);
+        }
+        else
+        {
+            if (msg.recursionDesired())
+            {
+                set = Cache.getCache(question);
+                if (set != null && !set.isEmpty())
+                {
+                    sendAnswer(msg, set, false);
+                }
+                else
+                {
+                    boolean found = false;
+                    for (InetSocketAddress nameServer : Cache.getNameServers())
+                    {
+                        QueryMessage qm = new QueryMessage(nameServer, question);
+                        send(qm);
+                        Message answer = qm.waitForAnswer(1, TimeUnit.SECONDS);
+                        if (answer != null)
+                        {
+                            answer.setId(msg.getId());
+                            answer.setRecipient(sender);
+                            send(answer);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        sendNegative(msg);
+                    }
+                }
+            }
+            else
+            {
+                sendNegative(msg);
+            }
+        }
+    }
+
+    protected void sendAnswer(Message msg, Set<ResourceRecord> set, boolean authorative) throws IOException
+    {
+        Set<ResourceRecord> answers = new HashSet<ResourceRecord>();
+        Set<ResourceRecord> authorities = new HashSet<ResourceRecord>();
+        Set<ResourceRecord> additionals = new HashSet<ResourceRecord>();
+
+        fill(msg.getQuestion(), set, answers, authorities, additionals);
+        ResponseMessage response = new ResponseMessage(
+                msg.getId(),
+                sender,
+                authorative,
+                msg.getQuestion(),
+                answers.toArray(new ResourceRecord[answers.size()]),
+                authorities.toArray(new ResourceRecord[authorities.size()]),
+                additionals.toArray(new ResourceRecord[additionals.size()])
+                );
+        send(response);
+    }
+
+    protected void sendNegative(Message msg) throws IOException
+    {
+        ResponseMessage response = new ResponseMessage(
+                msg.getId(),
+                sender,
+                Constants.RCODE_NAME_ERROR,
+                msg.getQuestion()
+                );
+        send(response);
+    }
+
+    protected void fill(
+        Question question,
+        Set<ResourceRecord> set,
+        Set<ResourceRecord> answers,
+        Set<ResourceRecord> authorities,
+        Set<ResourceRecord> additionals
+        )
+    {
+        Iterator<ResourceRecord> it = set.iterator();
+        while (it.hasNext())
+        {
+            ResourceRecord rr = it.next();
+            if (question.equalsANY(rr.getQuestion()))
+            {
+                answers.add(rr);
+            }
+            else
+            {
+                additionals.add(rr);
+            }
+            switch (rr.getType())
+            {
+                case Constants.MX:
+                {
+                    MX mx = (MX) rr.getRData();
+                    Set<ResourceRecord> recur = Cache.resolveFromCache(mx.getExchange(), Constants.A, sender);
+                    if (recur != null)
+                    {
+                        fill(question, recur, answers, authorities, additionals);
+                    }
+                }
+                break;
+                case Constants.NS:
+                {
+                    NS ns = (NS) rr.getRData();
+                    Set<ResourceRecord> recur = Cache.resolveFromCache(ns.getNsDName(), Constants.A, sender);
+                    if (recur != null)
+                    {
+                        fill(question, recur, answers, authorities, additionals);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    protected void processResponse(Message msg)
+    {
+        if (!Cache.getNameServers().contains(sender))
+        {
+            return; // ignore if not coming from nameserver
+        }
+        QueryMessage.answer(msg);
+        for (ResourceRecord rr : msg.getAnswers())
+        {
+            Cache.add(rr);
+        }
+        for (ResourceRecord rr : msg.getAuthorities())
+        {
+            Cache.add(rr);
+        }
+        for (ResourceRecord rr : msg.getAdditionals())
+        {
+            Cache.add(rr);
+        }
+    }
+
+}

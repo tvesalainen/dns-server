@@ -1,0 +1,109 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ *
+ * @author tkv
+ */
+public class Answer
+{
+    private Set<ResourceRecord> answers = new HashSet<ResourceRecord>();
+    private Set<ResourceRecord> authorities = new HashSet<ResourceRecord>();
+    private Set<ResourceRecord> additionals = new HashSet<ResourceRecord>();
+    private boolean authorative;
+
+    public void merge(Answer other)
+    {
+        authorative = authorative && other.authorative;
+        answers.addAll(other.answers);
+        authorities.addAll(other.authorities);
+        additionals.addAll(other.additionals);
+    }
+    public boolean hasAnswer()
+    {
+        return !answers.isEmpty();
+    }
+    /**
+     * @return the answers
+     */
+    public Set<ResourceRecord> getAnswers()
+    {
+        return answers;
+    }
+
+    /**
+     * @param answers the answers to set
+     */
+    public void setAnswers(Set<ResourceRecord> answers)
+    {
+        this.answers = answers;
+    }
+
+    /**
+     * @return the authorities
+     */
+    public Set<ResourceRecord> getAuthorities()
+    {
+        return authorities;
+    }
+
+    /**
+     * @param authorities the authorities to set
+     */
+    public void setAuthorities(Set<ResourceRecord> authorities)
+    {
+        this.authorities = authorities;
+    }
+
+    /**
+     * @return the additionals
+     */
+    public Set<ResourceRecord> getAdditionals()
+    {
+        return additionals;
+    }
+
+    /**
+     * @param additionals the additionals to set
+     */
+    public void setAdditionals(Set<ResourceRecord> additionals)
+    {
+        this.additionals = additionals;
+    }
+
+    /**
+     * @return the authorative
+     */
+    public boolean isAuthorative()
+    {
+        return authorative;
+    }
+
+    /**
+     * @param authorative the authorative to set
+     */
+    public void setAuthorative(boolean authorative)
+    {
+        this.authorative = authorative;
+    }
+
+    public ResourceRecord[] answers()
+    {
+        return answers.toArray(new ResourceRecord[answers.size()]);
+    }
+    public ResourceRecord[] authorities()
+    {
+        return authorities.toArray(new ResourceRecord[authorities.size()]);
+    }
+    public ResourceRecord[] additionals()
+    {
+        return additionals.toArray(new ResourceRecord[additionals.size()]);
+    }
+
+}

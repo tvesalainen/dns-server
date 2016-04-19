@@ -1,0 +1,52 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author tkv
+ */
+public class CName implements RData
+{
+    private DomainName name;
+    public CName(MessageReader reader) throws IOException
+    {
+        name = reader.readDomainName();
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.writeDomainName(name);
+    }
+
+    public boolean equals(Object oth)
+    {
+        if (oth instanceof CName)
+        {
+            CName cname = (CName) oth;
+            return name.equals(cname.name);
+        }
+        return false;
+    }
+
+    public int compareTo(RData oth)
+    {
+        if (oth instanceof CName)
+        {
+            CName cname = (CName) oth;
+            return name.compareTo(cname.name);
+        }
+        return -1;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "CNAME("+name.toString()+")";
+    }
+
+}

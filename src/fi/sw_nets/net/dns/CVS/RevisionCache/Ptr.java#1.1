@@ -1,0 +1,26 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author tkv
+ */
+public class Ptr implements RData
+{
+    private DomainName ptrDName;
+    public Ptr(MessageReader reader) throws IOException
+    {
+        ptrDName = reader.readDomainName();
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.writeDomainName(ptrDName);
+    }
+
+}

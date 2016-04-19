@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<dns xmlns="http://www.sw-nets.fi/schema/dns">
+    <name-server address="217.30.180.230"/>
+    <name-server address="217.30.182.230"/>
+    <master domain="sw-nets.fi" address="192.168.0.167"/>
+    <master domain="netace.fi" address="192.168.0.167"/>
+    <master domain="it-apu.fi" address="192.168.0.167"/>
+    <inside net="192.168.0.167/24">
+        <a-rr address="192.168.0.167" ttl="3600" name="www.sw-nets.fi"/>
+        <a-rr address="192.168.0.167" ttl="3600" name="www.valpuri.org"/>
+        <a-rr address="192.168.0.167" ttl="3600" name="www.yachtiiris.net"/>
+    </inside>
+    <zone minimum="3600" expire="86400" retry="600" refresh="900" serial="19" rname="hostmaster.sw-nets.fi" mname="ns1.sw-nets.fi" ttl="3600" name="sw-nets.fi">
+        <ns-rr nsdname="ns1.sw-nets.fi" ttl="3600" name="sw-nets.fi"/>
+        <ns-rr nsdname="ns1.twisted4life.com" ttl="3600" name="sw-nets.fi"/>
+        <ns-rr nsdname="ns2.sw-nets.fi" ttl="3600" name="sw-nets.fi"/>
+        <mx-rr exchange="smtp.sw-nets.fi" preference="10" ttl="3600" name="sw-nets.fi"/>
+        <a-rr address="202.157.182.142" ttl="3600" name="ns1.twisted4life.com"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="ns1.sw-nets.fi"/>
+        <a-rr address="83.150.86.2" ttl="3600" name="ns2.sw-nets.fi"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="smtp.sw-nets.fi"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="www.sw-nets.fi"/>
+    </zone>
+    <zone minimum="3600" expire="86400" retry="600" refresh="900" serial="30" rname="hostmaster.it-apu.fi" mname="ns1.it-apu.fi" ttl="3600" name="it-apu.fi">
+        <ns-rr nsdname="ns1.it-apu.fi" ttl="3600" name="it-apu.fi"/>
+        <ns-rr nsdname="ns1.twisted4life.com" ttl="0" name="it-apu.fi"/>
+        <ns-rr nsdname="ns2.it-apu.fi" ttl="0" name="it-apu.fi"/>
+        <mx-rr exchange="smtp.sw-nets.fi" preference="10" ttl="3600" name="it-apu.fi"/>
+        <a-rr address="202.157.182.142" ttl="3600" name="ns1.twisted4life.com"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="ns1.it-apu.fi"/>
+        <a-rr address="83.150.86.2" ttl="3600" name="ns2.it-apu.fi"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="www.it-apu.fi"/>
+    </zone>
+    <zone minimum="3600" expire="86400" retry="600" refresh="900" serial="10" rname="hostmaster.netace.fi" mname="ns1.netace.fi" ttl="3600" name="netace.fi">
+        <ns-rr nsdname="ns1.netace.fi" ttl="3600" name="netace.fi"/>
+        <ns-rr nsdname="ns1.twisted4life.com" ttl="3600" name="netace.fi"/>
+        <a-rr address="202.157.182.142" ttl="3600" name="ns1.twisted4life.com"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="ns1.netace.fi"/>
+        <a-rr address="83.145.206.42" ttl="3600" name="smtp.netace.fi"/>
+        <mx-rr exchange="netace.fi" preference="10" ttl="3600" name="smtp.netace.fi"/>
+    </zone>
+</dns>

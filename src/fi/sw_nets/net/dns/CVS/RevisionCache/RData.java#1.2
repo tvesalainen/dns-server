@@ -1,0 +1,16 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author tkv
+ */
+public interface RData extends Comparable<RData>
+{
+    void write(MessageWriter writer) throws IOException;
+}

@@ -1,0 +1,50 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author tkv
+ */
+public class HInfo implements RData
+{
+    private String cpu;
+    private String os;
+    public HInfo(MessageReader reader) throws IOException
+    {
+        cpu = reader.readCharacterString();
+        os = reader.readCharacterString();
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.writeCharacterString(cpu);
+        writer.writeCharacterString(os);
+    }
+
+    @Override
+    public boolean equals(Object oth)
+    {
+        if (oth instanceof HInfo)
+        {
+            HInfo hinfo = (HInfo) oth;
+            return cpu.equals(hinfo.cpu) && os.equals(hinfo.os);
+        }
+        return false;
+    }
+
+    public int compareTo(RData oth)
+    {
+        if (oth instanceof HInfo)
+        {
+            HInfo hinfo = (HInfo) oth;
+            return cpu.compareTo(hinfo.cpu) + 13 * os.compareTo(hinfo.os);
+        }
+        return -1;
+    }
+
+}

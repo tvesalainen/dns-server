@@ -1,0 +1,49 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+import java.net.InetAddress;
+
+/**
+ *
+ * @author tkv
+ */
+public class A implements RData
+{
+    private InetAddress address;
+
+    public A(InetAddress address)
+    {
+        this.address = address;
+    }
+
+    public A(MessageReader reader) throws IOException
+    {
+        byte[] bb = new byte[4];
+        reader.read(bb);
+        address = InetAddress.getByAddress(bb);
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.write(getAddress().getAddress());
+    }
+
+    @Override
+    public String toString()
+    {
+        return getAddress().toString();
+    }
+
+    /**
+     * @return the address
+     */
+    public InetAddress getAddress()
+    {
+        return address;
+    }
+
+}

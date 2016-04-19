@@ -1,0 +1,171 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+import java.util.Date;
+
+/**
+ *
+ * @author tkv
+ */
+public class ResourceRecord implements Comparable<ResourceRecord>
+{
+    private Question question;
+    private int ttl;
+    private RData rData;
+    private Date expires;
+
+    public ResourceRecord(String domainName, String type, int ttl, RData rData)
+    {
+        question = new Question(domainName, Constants.Type.valueOf(type).ordinal());
+        this.ttl =ttl;
+        this.rData = rData;
+    }
+
+    public ResourceRecord(DomainName domainName, int type, int ttl, RData rData)
+    {
+        question = new Question(domainName, type);
+        this.ttl =ttl;
+        this.rData = rData;
+    }
+
+    public ResourceRecord(MessageReader reader) throws IOException, RCodeException
+    {
+        DomainName name = reader.readDomainName();
+        int type = reader.read16();
+        question = new Question(name, type);
+        int clazz = reader.read16();
+        if (clazz != Constants.IN)
+        {
+            throw new RCodeException("CLASS "+getClazz()+" not supported", RCodeException.NOT_IMPLEMENTED);
+        }
+        ttl = reader.read32();
+        int rdLength = reader.read16();
+        reader.mark();
+
+        switch (type)
+        {
+            case Constants.A:  // a host address
+                rData = new A(reader);
+                break;
+            case Constants.NS: // an authoritative name server
+                rData = new NS(reader);
+                break;
+            case Constants.CNAME: // the canonical name for an alias
+                rData = new CName(reader);
+                break;
+            case Constants.SOA: // marks the start of a zone of authority
+                rData = new SOA(reader);
+                break;
+            case Constants.PTR: // a domain name pointer
+                rData = new Ptr(reader);
+                break;
+            case Constants.HINFO: // host information
+                rData = new HInfo(reader);
+                break;
+            case Constants.MX: // mail exchange
+                rData = new MX(reader);
+                break;
+            default:
+                throw new RCodeException("TYPE "+getType()+" not supported", RCodeException.NOT_IMPLEMENTED);
+        }
+        reader.reset();
+        reader.skip(rdLength);
+    }
+
+    public void write(MessageWriter writer) throws IOException
+    {
+        writer.writeDomainName(getName());
+        writer.write16(getType());
+        writer.write16(getClazz());
+        writer.write32(getTtl());
+        writer.mark();
+        writer.write16(0);
+        int start = writer.size();
+        getRData().write(writer);
+        int end = writer.size();
+        int len = end-start;
+        writer.reset();
+        writer.write16(len);
+        writer.skip(len);
+    }
+
+    public boolean expired(long current)
+    {
+        if (getExpires() != null)
+        {
+            return current > getExpires().getTime();
+        }
+        return false;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "RR("+getName().toString()+" "+Constants.type(getType())+" "+Constants.clazz(getClazz())+" ttl="+getTtl()+" "+getRData().toString()+")";
+    }
+
+    public Question getQuestion()
+    {
+        return question;
+    }
+    /**
+     * @return the name
+     */
+    public DomainName getName()
+    {
+        return question.getQName();
+    }
+
+    /**
+     * @return the type
+     */
+    public int getType()
+    {
+        return question.getQType();
+    }
+
+    /**
+     * @return the clazz
+     */
+    public int getClazz()
+    {
+        return question.getQClass();
+    }
+
+    /**
+     * @return the ttl
+     */
+    public int getTtl()
+    {
+        return ttl;
+    }
+
+    /**
+     * @return the rData
+     */
+    public RData getRData()
+    {
+        return rData;
+    }
+
+    public void setExpires(Date now)
+    {
+        expires = new Date(now.getTime()+ttl*1000);
+    }
+    /**
+     * @return the expires
+     */
+    public Date getExpires()
+    {
+        return expires;
+    }
+
+    public int compareTo(ResourceRecord rr)
+    {
+        return question.compareTo(rr.question);
+    }
+}

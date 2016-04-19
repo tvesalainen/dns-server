@@ -1,0 +1,101 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import fi.sw_nets.net.dns.Constants.Type;
+import java.net.SocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+
+/**
+ *
+ * @author tkv
+ */
+public class QueryMessage extends Message
+{
+    private static Map<Integer,QueryMessage> pending = new ConcurrentHashMap<Integer,QueryMessage>();
+    private static long nextId = 1;
+
+    private SynchronousQueue<Message> queue = new SynchronousQueue<Message>();
+
+    public QueryMessage(SocketAddress recipient, String domainName, int type)
+    {
+        super(
+        nextId++,
+        recipient,
+        true,
+        Constants.OPCODE_QUERY,
+        false,
+        false,
+        true,
+        false,
+        0,
+        0,
+        new Question(domainName, type),
+        null,
+        null,
+        null
+        );
+    }
+    public QueryMessage(SocketAddress recipient, DomainName domainName, int type)
+    {
+        super(
+        nextId++,
+        recipient,
+        true,
+        Constants.OPCODE_QUERY,
+        false,
+        false,
+        true,
+        false,
+        0,
+        0,
+        new Question(domainName, type),
+        null,
+        null,
+        null
+        );
+    }
+    public QueryMessage(SocketAddress recipient, Question question)
+    {
+        super(
+        nextId++,
+        recipient,
+        true,
+        Constants.OPCODE_QUERY,
+        false,
+        false,
+        true,
+        false,
+        0,
+        0,
+        question,
+        null,
+        null,
+        null
+        );
+    }
+
+    public Message waitForAnswer(long timeout, TimeUnit unit) throws InterruptedException
+    {
+        pending.put(id, this);
+        Message message = queue.poll(timeout, unit);
+        pending.remove(id);
+        return message;
+    }
+
+    public static boolean answer(Message message)
+    {
+        QueryMessage qm = pending.get(message.getId());
+        if (qm != null)
+        {
+            return qm.queue.offer(message);
+        }
+        return false;
+    }
+
+}

@@ -1,0 +1,57 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.sw_nets.net.dns;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.concurrent.Callable;
+import java.util.concurrent.LinkedBlockingQueue;
+
+/**
+ *
+ * @author tkv
+ */
+public class UDPResponder implements Callable<Object>
+{
+    private static LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<Message>();
+    private DatagramSocket socket;
+    public UDPResponder(DatagramSocket socket)
+    {
+        this.socket = socket;
+    }
+
+    public static void send(Message message)
+    {
+        queue.add(message);
+    }
+
+    public Object call() throws Exception
+    {
+        System.err.println("UDPResponder started...");
+        while (true)
+        {
+            try
+            {
+                Message message = queue.take();
+                System.err.println(message.getRecipient()+"->"+message.toString());
+                byte[] bb = message.toByteArray();
+                DatagramPacket packet = new DatagramPacket(bb, bb.length);
+                packet.setSocketAddress(message.getRecipient());
+                socket.send(packet);
+            }
+            catch (IOException ex)
+            {
+                ex.printStackTrace();
+            }
+            catch (InterruptedException ex)
+            {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+}
