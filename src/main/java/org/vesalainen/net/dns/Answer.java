@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class Answer
 {
-    private Set<ResourceRecord> answers = new ConcurrentSkipListSet<ResourceRecord>();
-    private Set<ResourceRecord> authorities = new ConcurrentSkipListSet<ResourceRecord>();
-    private Set<ResourceRecord> additionals = new ConcurrentSkipListSet<ResourceRecord>();
+    private Set<ResourceRecord> answers = new ConcurrentSkipListSet<>();
+    private Set<ResourceRecord> authorities = new ConcurrentSkipListSet<>();
+    private Set<ResourceRecord> additionals = new ConcurrentSkipListSet<>();
     private boolean authorative;
 
     public void merge(Answer other)
