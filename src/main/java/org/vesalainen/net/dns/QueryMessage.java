@@ -4,9 +4,6 @@
  */
 package org.vesalainen.net.dns;
 
-import org.vesalainen.net.dns.Constants.Type;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

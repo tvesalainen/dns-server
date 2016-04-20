@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<dns xmlns="http://vesalainen.org/schema/dns" keep-last="true">
+<dns xmlns="http://vesalainen.org/schema/dns" cleanup-interval="0">
     <name-server address="192.168.88.1"/>
     <name-server address="192.168.88.2"/>
 </dns>

@@ -18,15 +18,14 @@ public class AAAA extends A
     private static final long serialVersionUID = 1L;
     public AAAA(Inet6Address address)
     {
-        this.address = new InetSocketAddress(address, 53);
+        this.address = address;
     }
 
     public AAAA(MessageReader reader) throws IOException
     {
         byte[] bb = new byte[16];
         reader.read(bb);
-        InetAddress a = InetAddress.getByAddress(bb);
-        this.address = new InetSocketAddress(a, 53);
+        this.address = InetAddress.getByAddress(bb);
     }
 
 }

@@ -7,8 +7,6 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  *
@@ -16,7 +14,6 @@ import java.util.Date;
  */
 public class UDPProcessor extends Processor
 {
-    private static final SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss.SSS z");
     private static volatile Message previous;
     private DatagramPacket packet;
     public UDPProcessor(DatagramPacket packet)

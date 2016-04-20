@@ -11,7 +11,12 @@ import java.net.SocketException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.vesalainen.util.HashMapSet;
+import org.vesalainen.util.MapSet;
 import org.vesalainen.util.logging.JavaLogging;
 
 
@@ -116,41 +121,33 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         {
             if (recursionDesired)
             {
-                if (Cache.getFromCache(question, answer))
+                Cache.getFromCache(question, answer);
+                if (answer.hasFreshAnswers())
                 {
+                    answer.removeStaleAnswers();
                     answer.setAuthorative(false);
                 }
                 else
                 {
-                    Set<InetSocketAddress> nsList = Cache.getNameServerFor(question.getQName());
-                    nsList.addAll(Cache.getNameServers());
-                    int timeOut = 1;
-                    for (InetSocketAddress nameServer : nsList)
+                    Future<Answer> future = DNSServer.executor.submit(new Resolver(question, answer));
+                    try
                     {
-                        QueryMessage qm = new QueryMessage(nameServer, question);
-                        UDPResponder.send(qm);
-                        Message response = qm.waitForAnswer(timeOut++, TimeUnit.SECONDS);
-                        if (response != null)
+                        if (answer.hasAnswer())
                         {
-                            answer.merge(response.getAnswer());
-                            if (answer.getAnswerFor(question) != null)
-                            {
-                                break;
-                            }
-                            else
-                            {
-                                DomainName cname = answer.getCNameFor(question);
-                                if (cname != null)
-                                {
-                                    Answer recu = search(new Question(cname, question.getQType()), true);
-                                    answer.merge(recu);
-                                    if (answer.getAnswerFor(question) != null)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
+                            future.get(1, TimeUnit.SECONDS);
                         }
+                        else
+                        {
+                            future.get();
+                        }
+                    }
+                    catch (TimeoutException ex)
+                    {
+                        fine("timeout stale %s used", answer);
+                    }
+                    catch (ExecutionException ex)
+                    {
+                        throw new IllegalArgumentException(ex);
                     }
                 }
                 fill(question, answer);
@@ -217,12 +214,13 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         QueryMessage question = QueryMessage.getQuestion(msg, sender);
         if (question != null)
         {
+            MapSet<Question,ResourceRecord> map = new HashMapSet<>();
             ResourceRecord[] ar = msg.getAnswers();
             if (ar != null)
             {
                 for (ResourceRecord rr : ar)
                 {
-                    Cache.add(rr);
+                    map.add(rr.getQuestion(), rr);
                 }
             }
             ar = msg.getAuthorities();
@@ -230,7 +228,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
             {
                 for (ResourceRecord rr : ar)
                 {
-                    Cache.add(rr);
+                    map.add(rr.getQuestion(), rr);
                 }
             }
             ar = msg.getAdditionals();
@@ -238,9 +236,10 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
             {
                 for (ResourceRecord rr : ar)
                 {
-                    Cache.add(rr);
+                    map.add(rr.getQuestion(), rr);
                 }
             }
+            Cache.add(map);
             QueryMessage.answer(question, msg);
         }
         else
@@ -249,4 +248,52 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         }
     }
 
+    private class Resolver implements Callable<Answer>
+    {
+        private final Question question;
+        private final Answer answer;
+
+        public Resolver(Question question, Answer answer)
+        {
+            this.question = question;
+            this.answer = answer;
+        }
+
+        @Override
+        public Answer call() throws Exception
+        {
+            Set<InetAddress> nsList = Cache.getNameServerFor(question.getQName());
+            nsList.addAll(Cache.getNameServers());
+            int timeOut = 1;
+            for (InetAddress nameServer : nsList)
+            {
+                QueryMessage qm = new QueryMessage(new InetSocketAddress(nameServer, 53), question);
+                UDPResponder.send(qm);
+                Message response = qm.waitForAnswer(timeOut++, TimeUnit.SECONDS);
+                if (response != null)
+                {
+                    answer.merge(response.getAnswer());
+                    if (answer.getAnswerFor(question) != null)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        DomainName cname = answer.getCNameFor(question);
+                        if (cname != null)
+                        {
+                            Answer recu = search(new Question(cname, question.getQType()), true);
+                            answer.merge(recu);
+                            if (answer.getAnswerFor(question) != null)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return answer;
+        }
+        
+    }
 }

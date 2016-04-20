@@ -11,6 +11,10 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.vesalainen.util.logging.MinimalFormatter;
 
 /**
  *
@@ -49,6 +53,14 @@ public class DNSServer implements Runnable
             {
                 server = new DNSServer();
             }
+            Logger l = Logger.getLogger("org.vesalainen");
+            l.setUseParentHandlers(false);
+            l.setLevel(Level.ALL);
+            ConsoleHandler handler = new ConsoleHandler();
+            handler.setLevel(Level.ALL);
+            MinimalFormatter minimalFormatter = new MinimalFormatter(Cache::getClock);
+            handler.setFormatter(minimalFormatter);
+            l.addHandler(handler);
             Runtime.getRuntime().addShutdownHook(new Thread(server));
             DatagramSocket socket = new DatagramSocket(53);
             executor.submit(new UDPListener(socket));

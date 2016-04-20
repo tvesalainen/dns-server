@@ -25,21 +25,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -47,6 +48,7 @@ import javax.xml.bind.Unmarshaller;
 import org.vesalainen.util.ConcurrentHashMapSet;
 import org.vesalainen.util.HashMapSet;
 import org.vesalainen.util.MapSet;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
@@ -55,20 +57,22 @@ import org.vesalainen.util.MapSet;
 public class Cache implements Runnable
 {
     public static final String PACKAGE = "org.vesalainen.net.dns.jaxb.dns";
+    
+    public static final JavaLogging log = new JavaLogging(Cache.class);
 
     private static final Map<DomainName,MapSet<Question,ResourceRecord>> outerZones = new HashMap<>();
     private static final Map<DomainName,ResponseMessage> zoneTransferMessage = new HashMap<>();
     private static final Map<DomainName,MapSet<Question,ResourceRecord>> innerZones = new HashMap<>();
     private static final Map<SubNet,MapSet<Question,ResourceRecord>> innerNets = new HashMap<>();
     private static MapSet<Question,ResourceRecord> cache = new ConcurrentHashMapSet<>();
-    private static final List<InetSocketAddress> nameServers = new ArrayList<>();
-    private static final List<InetSocketAddress> slaves = new ArrayList<>();
-    private static final Map<DomainName,InetSocketAddress> masters = new HashMap<>();
+    private static final List<InetAddress> nameServers = new ArrayList<>();
+    private static final List<InetAddress> slaves = new ArrayList<>();
+    private static final Map<DomainName,InetAddress> masters = new HashMap<>();
     private static File config;
     private static Dns dns;
     private static final ObjectFactory factory = new ObjectFactory();
     private static Clock clock = Clock.systemUTC();
-    private static boolean keepLast;
+    private static long cleanupInterval;
 
     public Cache(File conf) throws JAXBException, UnknownHostException, IllegalNetMaskException, IOException, RCodeException
     {
@@ -76,13 +80,16 @@ public class Cache implements Runnable
         JAXBContext jaxbCtx = JAXBContext.newInstance(PACKAGE);
         Unmarshaller unmarshaller = jaxbCtx.createUnmarshaller();
         dns = (Dns) unmarshaller.unmarshal(config); //NOI18N
-        Boolean isKeepLast = dns.isKeepLast();
-        keepLast = isKeepLast != null && isKeepLast;
+        BigInteger cui = dns.getCleanupInterval();
+        cleanupInterval = cui == null ? 1000 : cui.longValue();
         init();
         initZones();
         initInnerZones();
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this, 0, 1, TimeUnit.HOURS);
+        if (cleanupInterval > 0)
+        {
+            scheduler.scheduleAtFixedRate(this, 0, cleanupInterval, TimeUnit.SECONDS);
+        }
     }
 
     public static void save() throws JAXBException, FileNotFoundException, IOException
@@ -111,19 +118,19 @@ public class Cache implements Runnable
         iis.close();
     }
 
-    private static void init()
+    private static void init() throws UnknownHostException
     {
         for (NameServer nameServer : dns.getNameServer())
         {
-            nameServers.add(new InetSocketAddress(nameServer.getAddress(), 53));
+            nameServers.add(InetAddress.getByName(nameServer.getAddress()));
         }
         for (Master master : dns.getMaster())
         {
-            masters.put(new DomainName(master.getDomain()), new InetSocketAddress(master.getAddress(), 53));
+            masters.put(new DomainName(master.getDomain()), InetAddress.getByName(master.getAddress()));
         }
         for (Slave slave : dns.getSlave())
         {
-            slaves.add(new InetSocketAddress(slave.getAddress(), 53));
+            slaves.add(InetAddress.getByName(slave.getAddress()));
         }
     }
     private static void initZones() throws UnknownHostException, IllegalNetMaskException
@@ -244,11 +251,11 @@ public class Cache implements Runnable
     {
         for (DomainName name : masters.keySet())
         {
-            InetSocketAddress address = masters.get(name);
+            InetAddress address = masters.get(name);
             Message msg = null;
             try
             {
-                msg = ZoneTransfer.getZone(name, address);
+                msg = ZoneTransfer.getZone(name, new InetSocketAddress(address, 53));
             }
             catch (IOException ex)
             {
@@ -304,7 +311,7 @@ public class Cache implements Runnable
                             target.getARrOrMxRrOrNsRr().add(arr);
                             arr.setName(rr.getName().toString());
                             arr.setTtl(BigInteger.valueOf(rr.getTtl()));
-                            arr.setAddress(a.getAddress().getAddress().getHostAddress());
+                            arr.setAddress(a.getAddress().getHostAddress());
                         }
                         break;
                         case Constants.MX:
@@ -440,84 +447,34 @@ public class Cache implements Runnable
         }
         return found;
     }
-    public static boolean getFromCache(Question question, Answer answer)
+    public static void getFromCache(Question question, Answer answer)
     {
         boolean found = false;
         long current = System.currentTimeMillis();
         Set<ResourceRecord> set = cache.get(question);
         if (set != null)
         {
-            boolean keptLast = false;
-            Iterator<ResourceRecord> iterator = set.iterator();
-            while (iterator.hasNext())
-            {
-                ResourceRecord rr = iterator.next();
-                if (rr.expired(current))
-                {
-                    if (!keepLast || iterator.hasNext())
-                    {
-                        iterator.remove();
-                    }
-                    else
-                    {
-                        keptLast =  true;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (!keptLast)
-            {
-                found = found || !set.isEmpty();
-            }
             answer.getAnswers().addAll(set);
         }
         set = cache.get(question.getCName());
         if (set != null)
         {
-            boolean keptLast = false;
-            Iterator<ResourceRecord> iterator = set.iterator();
-            while (iterator.hasNext())
-            {
-                ResourceRecord rr = iterator.next();
-                if (rr.expired(current))
-                {
-                    if (!keepLast || iterator.hasNext())
-                    {
-                        iterator.remove();
-                    }
-                    else
-                    {
-                        keptLast =  true;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (!keptLast)
-            {
-                found = found || !set.isEmpty();
-            }
             answer.getAnswers().addAll(set);
         }
-        return found;
     }
 
-    public static Set<InetSocketAddress> getNameServerFor(DomainName domain)
+    public static Set<InetAddress> getNameServerFor(DomainName domain)
     {
 
-        Set<InetSocketAddress> res = new HashSet<>();
+        Set<InetAddress> res = new HashSet<>();
         DomainName baseDomain = domain;
         while (baseDomain.getLevel() > 1)
         {
             // NS
             Question qNS = new Question(baseDomain, Constants.NS);
             Answer answer = new Answer();
-            if (getFromCache(qNS, answer))
+            getFromCache(qNS, answer);
+            if (answer.hasAnswer())
             {
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answer.getAnswers())
@@ -530,14 +487,15 @@ public class Cache implements Runnable
                     for (ResourceRecord rrA : answer2.getAnswers())
                     {
                         A a = (A) rrA.getRData();
-                        res.add(a.address);
+                        res.add(a.getAddress());
                     }
                 }
             }
             // SOA
             Question qSOA = new Question(baseDomain, Constants.SOA);
             Answer answerSOA = new Answer();
-            if (getFromCache(qSOA, answerSOA))
+            getFromCache(qSOA, answerSOA);
+            if (answerSOA.hasAnswer())
             {
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answerSOA.getAnswers())
@@ -560,39 +518,33 @@ public class Cache implements Runnable
     }
     private void cleanup()
     {
-        long current = System.currentTimeMillis();
         for (Map.Entry<Question, Set<ResourceRecord>> e : cache.entrySet())
         {
-            Set<ResourceRecord> set = e.getValue();
-            Iterator<ResourceRecord> iterator = set.iterator();
-            while (iterator.hasNext())
-            {
-                ResourceRecord rr = iterator.next();
-                if (rr.expired(current))
-                {
-                    if (!keepLast || iterator.hasNext())
-                    {
-                        iterator.remove();
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
+            e.getValue().removeIf(ResourceRecord::isStale);
         }
     }
 
-    public static void add(ResourceRecord rr)
+    public static void add(MapSet<Question, ResourceRecord> map)
     {
-        rr.setExpires();
-        cache.add(rr.getQuestion(), rr);
+        for (Entry<Question, Set<ResourceRecord>> e : map.entrySet())
+        {
+            Question q = e.getKey();
+            Set<ResourceRecord> set = e.getValue();
+            log.finest("add %s count=%d", q, set.size());
+            set.forEach(ResourceRecord::setExpires);
+            Set<ResourceRecord> oldSet = cache.get(q);
+            if (oldSet != null)
+            {
+                oldSet.removeIf(ResourceRecord::isStale);
+            }
+            cache.addAll(q, set);
+        }
     }
 
     /**
      * @return the nameServers
      */
-    public static List<InetSocketAddress> getNameServers()
+    public static List<InetAddress> getNameServers()
     {
         return nameServers;
     }
@@ -600,7 +552,7 @@ public class Cache implements Runnable
     /**
      * @return the slaves
      */
-    public static List<InetSocketAddress> getSlaves()
+    public static List<InetAddress> getSlaves()
     {
         return slaves;
     }
@@ -608,7 +560,7 @@ public class Cache implements Runnable
     /**
      * @return the masters
      */
-    public static Map<DomainName, InetSocketAddress> getMasters()
+    public static Map<DomainName, InetAddress> getMasters()
     {
         return masters;
     }
@@ -623,49 +575,20 @@ public class Cache implements Runnable
         return clock;
     }
 
-    public boolean keepLast()
-    {
-        return keepLast;
-    }
-    
-    public static void main(String... args)
-    {
-        try
-        {
-            File ff = new File("C:\\Users\\tkv\\Documents\\NetBeansProjects\\DNSServer\\src\\fi\\sw_nets\\net\\dns\\dns.xml");
-            Cache cc = new Cache(ff);
-            Answer answer = new Answer();
-            Question question = new Question("valpuri.org", Constants.MX);
-            System.err.println(cc.getZone(question, answer));
-        }
-        catch(Exception ex)
-        {
-            ex.printStackTrace();
-        }
-    }
-
+    @Override
     public void run()
     {
         try
         {
-            cleanup();
+            if (cleanupInterval != 0)
+            {
+                cleanup();
+            }
             refreshZones();
         }
-        catch (IOException ex)
+        catch (IOException | RCodeException | IllegalNetMaskException | JAXBException ex)
         {
-            ex.printStackTrace();
-        }
-        catch (RCodeException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (IllegalNetMaskException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (JAXBException ex)
-        {
-            ex.printStackTrace();
+            log.log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
     }
 }

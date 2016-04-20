@@ -18,7 +18,6 @@ import org.vesalainen.util.logging.JavaLogging;
  */
 public class UDPResponder extends JavaLogging implements Callable<Object>
 {
-    private static final SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss.SSS z");
     private static LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<Message>();
     private DatagramSocket socket;
     public UDPResponder(DatagramSocket socket)

@@ -29,6 +29,14 @@ public class Answer
     {
         return !answers.isEmpty();
     }
+    public boolean hasFreshAnswers()
+    {
+        return answers.stream().anyMatch(ResourceRecord::isFresh);
+    }
+    public void removeStaleAnswers()
+    {
+        answers.removeIf(ResourceRecord::isStale);
+    }
     public ResourceRecord getAnswerFor(Question question)
     {
         if (hasAnswer())

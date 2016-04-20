@@ -45,7 +45,13 @@
                     </xsd:complexType>
                 </xsd:element>
             </xsd:sequence>
-            <xsd:attribute name="keep-last" type="xsd:boolean"/>
+            <xsd:attribute name="cleanup-interval" type="xsd:positiveInteger" default="1000">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Time in seconds between ttl cleanup. 0 means no cleanup at all.
+                </xsd:documentation>
+            </xsd:annotation>
+            </xsd:attribute>
         </xsd:complexType>
     </xsd:element>
     <xsd:complexType name="ResourceRecord">

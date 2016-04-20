@@ -16,7 +16,7 @@ import java.net.InetSocketAddress;
 public class A implements RData
 {
     private static final long serialVersionUID = 1L;
-    protected InetSocketAddress address;
+    protected InetAddress address;
 
     protected A()
     {
@@ -24,20 +24,20 @@ public class A implements RData
 
     public A(Inet4Address address)
     {
-        this.address = new InetSocketAddress(address, 53);
+        this.address = address;
     }
 
     public A(MessageReader reader) throws IOException
     {
         byte[] bb = new byte[4];
         reader.read(bb);
-        InetAddress a = InetAddress.getByAddress(bb);
-        this.address = new InetSocketAddress(a, 53);
+        this.address = InetAddress.getByAddress(bb);
     }
 
+    @Override
     public void write(MessageWriter writer) throws IOException
     {
-        writer.write(address.getAddress().getAddress());
+        writer.write(address.getAddress());
     }
 
     @Override
@@ -62,17 +62,18 @@ public class A implements RData
     @Override
     public String toString()
     {
-        return "A("+address.getAddress().getHostAddress()+")";
+        return "A("+address.getAddress()+")";
     }
 
     /**
      * @return the address
      */
-    public InetSocketAddress getAddress()
+    public InetAddress getAddress()
     {
         return address;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof A)

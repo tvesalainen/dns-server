@@ -7,7 +7,6 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.Date;
 import org.vesalainen.lang.Primitives;
 
 /**
@@ -111,7 +110,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         if (rData instanceof A)
         {
             A a = (A) rData;
-            String aa = a.getAddress().getAddress().getHostAddress();
+            String aa = a.getAddress().getHostAddress();
             String[] ss = aa.split("\\.");
             StringBuilder sb = new StringBuilder();
             for (int ii=ss.length-1;ii>=0;ii--)
@@ -193,6 +192,14 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         return expires;
     }
 
+    public boolean isStale()
+    {
+        return expires < Cache.getClock().millis();
+    }
+    public boolean isFresh()
+    {
+        return expires >= Cache.getClock().millis();
+    }
     @Override
     public boolean equals(Object oth)
     {
