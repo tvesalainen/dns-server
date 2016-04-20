@@ -45,7 +45,7 @@ public class TCPProcessor extends Processor
                 data = new byte[length];
                 in.read(data);
                 Message msg = new Message(data);
-System.out.println(DATEFORMAT.format(new Date())+" "+"TCP "+sender+"<-"+msg);
+                fine("TCP %s <- %s", sender, msg);
                 if (msg.isQuery())
                 {
                     processQuery(msg);

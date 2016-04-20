@@ -9,15 +9,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class ZoneTransfer
+public class ZoneTransfer extends JavaLogging
 {
     public ZoneTransfer()
     {
+        super(ZoneTransfer.class);
     }
 
     public static Message getZone(String domain, InetSocketAddress ns) throws IOException, RCodeException
@@ -41,7 +43,6 @@ public class ZoneTransfer
         data = new byte[length];
         in.read(data);
         Message msg = new Message(data);
-System.out.println(msg);
         socket.close();
         return msg;
     }

@@ -56,17 +56,17 @@ public class Cache implements Runnable
 {
     public static final String PACKAGE = "org.vesalainen.net.dns.jaxb.dns";
 
-    private static Map<DomainName,MapSet<Question,ResourceRecord>> outerZones = new HashMap<DomainName,MapSet<Question,ResourceRecord>>();
-    private static Map<DomainName,ResponseMessage> zoneTransferMessage = new HashMap<DomainName,ResponseMessage>();
-    private static Map<DomainName,MapSet<Question,ResourceRecord>> innerZones = new HashMap<DomainName,MapSet<Question,ResourceRecord>>();
-    private static Map<SubNet,MapSet<Question,ResourceRecord>> innerNets = new HashMap<SubNet,MapSet<Question,ResourceRecord>>();
-    private static MapSet<Question,ResourceRecord> cache = new ConcurrentHashMapSet<Question,ResourceRecord>();
-    private static List<InetSocketAddress> nameServers = new ArrayList<InetSocketAddress>();
-    private static List<InetSocketAddress> slaves = new ArrayList<InetSocketAddress>();
-    private static Map<DomainName,InetSocketAddress> masters = new HashMap<DomainName,InetSocketAddress>();
+    private static final Map<DomainName,MapSet<Question,ResourceRecord>> outerZones = new HashMap<>();
+    private static final Map<DomainName,ResponseMessage> zoneTransferMessage = new HashMap<>();
+    private static final Map<DomainName,MapSet<Question,ResourceRecord>> innerZones = new HashMap<>();
+    private static final Map<SubNet,MapSet<Question,ResourceRecord>> innerNets = new HashMap<>();
+    private static MapSet<Question,ResourceRecord> cache = new ConcurrentHashMapSet<>();
+    private static final List<InetSocketAddress> nameServers = new ArrayList<>();
+    private static final List<InetSocketAddress> slaves = new ArrayList<>();
+    private static final Map<DomainName,InetSocketAddress> masters = new HashMap<>();
     private static File config;
     private static Dns dns;
-    private static ObjectFactory factory = new ObjectFactory();
+    private static final ObjectFactory factory = new ObjectFactory();
     private static Clock clock = Clock.systemUTC();
     private static boolean keepLast;
 

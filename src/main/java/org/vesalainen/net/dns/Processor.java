@@ -9,10 +9,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import org.vesalainen.util.logging.JavaLogging;
 
 
 
@@ -20,13 +20,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author tkv
  */
-public abstract class Processor implements Callable<Object>
+public abstract class Processor extends JavaLogging implements Callable<Object>
 {
     protected InetSocketAddress sender;
     protected byte[] data;
     private int searchLevel;
     public Processor()
     {
+        super(Processor.class);
     }
 
     public abstract void send(Message msg) throws IOException;
@@ -100,7 +101,7 @@ public abstract class Processor implements Callable<Object>
 
     protected Answer search(Question question, boolean recursionDesired) throws IOException, InterruptedException
     {
-System.out.println("search("+question+")");
+        fine("search(%s)",question);
         Answer answer = new Answer();
         if (searchLevel++ > 10)
         {
@@ -108,7 +109,7 @@ System.out.println("search("+question+")");
         }
         if (Cache.resolveAuthorative(question, sender, answer))
         {
-System.out.println("Zone hit "+question);
+            fine("Zone hit %s",question);
             answer.setAuthorative(true);
         }
         else
@@ -244,7 +245,7 @@ System.out.println("Zone hit "+question);
         }
         else
         {
-            System.out.println("DROPPED "+msg);
+            fine("DROPPED %s", msg);
         }
     }
 

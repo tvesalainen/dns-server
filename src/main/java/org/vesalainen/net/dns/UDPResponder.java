@@ -10,18 +10,20 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class UDPResponder implements Callable<Object>
+public class UDPResponder extends JavaLogging implements Callable<Object>
 {
     private static final SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss.SSS z");
     private static LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<Message>();
     private DatagramSocket socket;
     public UDPResponder(DatagramSocket socket)
     {
+        super(UDPResponder.class);
         this.socket = socket;
     }
 
@@ -30,9 +32,10 @@ public class UDPResponder implements Callable<Object>
         queue.add(message);
     }
 
+    @Override
     public Object call() throws Exception
     {
-        System.out.println("UDPResponder started...");
+        fine("UDPResponder started...");
         while (true)
         {
             try
@@ -49,7 +52,7 @@ public class UDPResponder implements Callable<Object>
                     message.setAuthorities();
                     bb = message.toByteArray();
                 }
-System.out.println(DATEFORMAT.format(new Date())+" "+message.getRecipient()+"->"+message.toString()+" len="+bb.length);
+                fine("%s -> %s len=%d", message.getRecipient(), message, bb.length);
                 DatagramPacket packet = new DatagramPacket(bb, bb.length);
                 packet.setSocketAddress(message.getRecipient());
                 socket.send(packet);

@@ -7,22 +7,25 @@ package org.vesalainen.net.dns;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.Callable;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class UDPListener implements Callable<Object>
+public class UDPListener extends JavaLogging implements Callable<Object>
 {
     private DatagramSocket socket;
     public UDPListener(DatagramSocket socket)
     {
+        super(UDPListener.class);
         this.socket = socket;
     }
 
+    @Override
     public Object call() throws Exception
     {
-        System.out.println("DNS Server Starting...");
+        info("DNS Server Starting...");
         while (true)
         {
             try

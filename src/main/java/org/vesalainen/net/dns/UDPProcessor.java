@@ -26,6 +26,7 @@ public class UDPProcessor extends Processor
         this.packet = packet;
     }
 
+    @Override
     public Object call() throws Exception
     {
         try
@@ -33,11 +34,11 @@ public class UDPProcessor extends Processor
             Message msg = new Message(data);
             if (previous != null && previous.equals(msg))
             {
-System.out.println(DATEFORMAT.format(new Date())+" "+"Duplicate: "+sender+"<-"+msg);
+                fine("Duplicate: %s <- %s", sender, msg);
                 return null;
             }
             previous = msg;
-System.out.println(DATEFORMAT.format(new Date())+" "+"UDP "+sender+"<-"+msg);
+            fine("UDP %s <- %s", sender, msg);
             if (msg.isQuery())
             {
                 processQuery(msg);
