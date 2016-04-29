@@ -11,6 +11,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -18,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.vesalainen.net.InetAddressParser;
 import static org.vesalainen.net.dns.Constants.*;
 import org.vesalainen.util.ThreadSafeTemporary;
 
@@ -28,6 +30,7 @@ import org.vesalainen.util.ThreadSafeTemporary;
 public class Resolver
 {
     private static final int PacketSize = 512;
+    private static final InetAddressParser parser = InetAddressParser.newInstance();
     private ThreadSafeTemporary<DatagramSocket> socketStore;
     private InetAddress master;
 
@@ -47,6 +50,11 @@ public class Resolver
     }
     public Set<InetAddress> resolv(String host, int type, int retries, long timeout, TimeUnit unit) throws IOException
     {
+        InetAddress address = parser.parse(host);
+        if (address != null)
+        {
+            return Collections.singleton(address);
+        }
         Res res = new Res(host, type);
         for (int ii=0;ii<retries;ii++)
         {
