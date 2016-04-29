@@ -7,6 +7,8 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashSet;
@@ -104,9 +106,12 @@ public class Resolver
             Set<InetAddress> set = new HashSet<>();
             for (ResourceRecord rr : msg.getAnswer().getAnswers())
             {
-                assert rr.getType() == A;
-                A a = (A) rr.getRData();
-                set.add(a.getAddress());
+                RData rData = rr.getRData();
+                if (rData instanceof A)
+                {
+                    A a = (A) rData;
+                    set.add(a.getAddress());
+                }
             }
             return set;
         }

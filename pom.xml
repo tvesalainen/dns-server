@@ -16,6 +16,10 @@
             <artifactId>util</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.vesalainen.lpg</groupId>
+            <artifactId>javalpg</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
