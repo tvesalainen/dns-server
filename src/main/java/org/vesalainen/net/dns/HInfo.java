@@ -47,6 +47,7 @@ public class HInfo implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof HInfo)
@@ -54,7 +55,13 @@ public class HInfo implements RData
             HInfo hinfo = (HInfo) oth;
             return cpu.compareTo(hinfo.cpu) + 13 * os.compareTo(hinfo.os);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 4;
     }
 
 }

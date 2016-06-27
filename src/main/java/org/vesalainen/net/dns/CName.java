@@ -48,6 +48,7 @@ public class CName implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof CName)
@@ -55,7 +56,13 @@ public class CName implements RData
             CName cname = (CName) oth;
             return name.compareTo(cname.name);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 2;
     }
 
     @Override

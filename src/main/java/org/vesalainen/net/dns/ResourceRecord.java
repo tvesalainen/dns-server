@@ -225,25 +225,12 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
     @Override
     public int compareTo(ResourceRecord rr)
     {
-        return (int) Primitives.signum(expires - rr.expires);
+        int cmp = question.compareTo(rr.question);
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+        return rData.compareTo(rr.rData);
     }
 
-    public static void main(String[] args)
-    {
-        try
-        {
-            /*
-            ResourceRecord rr1 = new ResourceRecord("aa.bb", "A", 123, new A((Inet4Address)Inet4Address.getByName("192.168.0.1")));
-            ResourceRecord rr2 = new ResourceRecord("aa.bb", "A", 12, new A((Inet4Address)Inet4Address.getByName("192.168.0.1")));
-            Answer answer = new Answer();
-            answer.getAnswers().add(rr1);
-            answer.getAnswers().add(rr2);
-            System.err.println(answer.getAnswers().size());
-             */
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
-    }
 }

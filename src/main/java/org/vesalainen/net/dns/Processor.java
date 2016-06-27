@@ -124,8 +124,10 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                 Cache.getFromCache(question, answer);
                 if (answer.hasFreshAnswers())
                 {
+                    fine("%s has fresh answers %s",question, answer);
                     answer.removeStaleAnswers();
                     answer.setAuthorative(false);
+                    fine("%s has answers after stale removal %s",question, answer);
                 }
                 else
                 {
@@ -150,7 +152,9 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                         throw new IllegalArgumentException(ex);
                     }
                 }
-                fill(question, answer);
+                fine("%s has answers before fillAdditionals %s",question, answer);
+                fillAdditionals(question, answer);
+                fine("%s has answers after fillAdditionals %s",question, answer);
             }
         }
         return answer;
@@ -177,7 +181,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         send(response);
     }
 
-    protected void fill(Question question, Answer answer) throws IOException, InterruptedException
+    protected void fillAdditionals(Question question, Answer answer) throws IOException, InterruptedException
     {
         Iterator<ResourceRecord> it = answer.getAnswers().iterator();
         while (it.hasNext())
@@ -211,35 +215,35 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
     }
     protected void processResponse(Message msg)
     {
+        MapSet<Question,ResourceRecord> map = new HashMapSet<>();
+        ResourceRecord[] ar = msg.getAnswers();
+        if (ar != null)
+        {
+            for (ResourceRecord rr : ar)
+            {
+                map.add(rr.getQuestion(), rr);
+            }
+        }
+        ar = msg.getAuthorities();
+        if (ar != null)
+        {
+            for (ResourceRecord rr : ar)
+            {
+                map.add(rr.getQuestion(), rr);
+            }
+        }
+        ar = msg.getAdditionals();
+        if (ar != null)
+        {
+            for (ResourceRecord rr : ar)
+            {
+                map.add(rr.getQuestion(), rr);
+            }
+        }
+        Cache.add(map);
         QueryMessage question = QueryMessage.getQuestion(msg, sender);
         if (question != null)
         {
-            MapSet<Question,ResourceRecord> map = new HashMapSet<>();
-            ResourceRecord[] ar = msg.getAnswers();
-            if (ar != null)
-            {
-                for (ResourceRecord rr : ar)
-                {
-                    map.add(rr.getQuestion(), rr);
-                }
-            }
-            ar = msg.getAuthorities();
-            if (ar != null)
-            {
-                for (ResourceRecord rr : ar)
-                {
-                    map.add(rr.getQuestion(), rr);
-                }
-            }
-            ar = msg.getAdditionals();
-            if (ar != null)
-            {
-                for (ResourceRecord rr : ar)
-                {
-                    map.add(rr.getQuestion(), rr);
-                }
-            }
-            Cache.add(map);
             QueryMessage.answer(question, msg);
         }
         else
@@ -275,6 +279,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                     answer.merge(response.getAnswer());
                     if (answer.getAnswerFor(question) != null)
                     {
+                        fine("%s succeed after merge %s", question, response.getAnswer());
                         break;
                     }
                     else
@@ -286,6 +291,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                             answer.merge(recu);
                             if (answer.getAnswerFor(question) != null)
                             {
+                                fine("%s succeed after recursion merge %s", question, recu);
                                 break;
                             }
                         }

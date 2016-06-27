@@ -16,10 +16,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class QueryMessage extends Message
 {
-    private static Map<Integer,QueryMessage> pending = new ConcurrentHashMap<Integer,QueryMessage>();
+    private static Map<Integer,QueryMessage> pending = new ConcurrentHashMap<>();
     private static long nextId = 1;
 
-    private SynchronousQueue<Message> queue = new SynchronousQueue<Message>();
+    private SynchronousQueue<Message> queue = new SynchronousQueue<>();
 
     public QueryMessage(SocketAddress recipient, String domainName, int type)
     {
@@ -82,9 +82,15 @@ public class QueryMessage extends Message
     public Message waitForAnswer(long timeout, TimeUnit unit) throws InterruptedException
     {
         pending.put(id, this);
-        Message message = queue.poll(timeout, unit);
-        pending.remove(id);
-        return message;
+        try
+        {
+            Message message = queue.poll(timeout, unit);
+            return message;
+        }
+        finally
+        {
+            pending.remove(id);
+        }
     }
 
     public static QueryMessage getQuestion(Message message, SocketAddress sender)

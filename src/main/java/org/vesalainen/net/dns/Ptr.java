@@ -48,6 +48,7 @@ public class Ptr implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof Ptr)
@@ -55,7 +56,13 @@ public class Ptr implements RData
             Ptr ptr = (Ptr) oth;
             return ptrDName.compareTo(ptr.ptrDName);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 7;
     }
 
     @Override

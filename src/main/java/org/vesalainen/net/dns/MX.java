@@ -76,6 +76,7 @@ public class MX implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof MX)
@@ -83,7 +84,13 @@ public class MX implements RData
             MX mx = (MX) oth;
             return exchange.compareTo(mx.exchange) + 13 * (preference - mx.preference);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 5;
     }
 
 }

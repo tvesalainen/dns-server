@@ -7,7 +7,6 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 
 /**
  *
@@ -26,6 +25,12 @@ public class AAAA extends A
         byte[] bb = new byte[16];
         reader.read(bb);
         this.address = InetAddress.getByAddress(bb);
+    }
+
+    @Override
+    public int order()
+    {
+        return 1;
     }
 
 }

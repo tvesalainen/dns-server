@@ -7,6 +7,7 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import org.vesalainen.util.stream.Streams;
 
 /**
  *
@@ -61,7 +62,7 @@ public class A implements RData
     @Override
     public String toString()
     {
-        return "A("+address.getAddress()+")";
+        return "A("+address.getHostAddress()+")";
     }
 
     /**
@@ -75,12 +76,22 @@ public class A implements RData
     @Override
     public int compareTo(RData oth)
     {
-        if (oth instanceof A)
+        if (getClass().equals(oth.getClass()))
         {
             A a = (A) oth;
-            return address.toString().compareTo(a.address.toString());
+            return compare(address.getAddress(), a.address.getAddress());
         }
-        return -1;
+        return order() - oth.order();
     }
 
+    @Override
+    public int order()
+    {
+        return 0;
+    }
+
+    protected int compare(byte[] a1, byte[] a2)
+    {
+        return Streams.compare(Streams.stream(a1), Streams.stream(a2));
+    }
 }

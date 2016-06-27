@@ -148,6 +148,7 @@ public class SOA implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof SOA)
@@ -156,7 +157,13 @@ public class SOA implements RData
             return
                 mName.compareTo(soa.mName);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 8;
     }
 
 }

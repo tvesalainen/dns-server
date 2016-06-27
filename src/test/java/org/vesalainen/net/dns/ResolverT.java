@@ -42,8 +42,8 @@ public class ResolverT
     {
         try
         {
-            Resolver resolver = new Resolver(InetAddress.getByName("192.168.88.2"));
-            Set<InetAddress> set = resolver.resolv("hp.iiris");
+            Resolver resolver = new Resolver(InetAddress.getByName("localhost"));
+            Set<InetAddress> set = resolver.resolv("walter-producer-cdn.api.bbci.co.uk");
         }
         catch (UnknownHostException ex)
         {

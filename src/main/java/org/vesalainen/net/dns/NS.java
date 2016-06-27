@@ -62,6 +62,7 @@ public class NS implements RData
         return hash;
     }
 
+    @Override
     public int compareTo(RData oth)
     {
         if (oth instanceof NS)
@@ -69,7 +70,13 @@ public class NS implements RData
             NS ns = (NS) oth;
             return nsDName.compareTo(ns.nsDName);
         }
-        return -1;
+        return order() - oth.order();
+    }
+
+    @Override
+    public int order()
+    {
+        return 6;
     }
 
 }

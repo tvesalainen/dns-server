@@ -1,0 +1,9 @@
+VERSION=1.0.0
+JAR=/home/pi/dns-server-$VERSION-jar-with-dependencies.jar
+OPTS="-ll CONFIG -pl CONFIG -lp /var/log/dns-server%g.log"
+CONFIG=/home/pi/dns-server.xml
+CACHE=/home/pi/dns-cache.ser
+DAEMON=/usr/bin/java
+DAEMON_ARGS="-server -jar $JAR $OPTS $CONFIG $CACHE"
+
+

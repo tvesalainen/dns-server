@@ -32,10 +32,8 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,28 +92,33 @@ public class Cache implements Runnable
 
     public static void save() throws JAXBException, FileNotFoundException, IOException
     {
-        FileOutputStream out = new FileOutputStream(config);
-        JAXBContext jaxbCtx = JAXBContext.newInstance(PACKAGE);
-        Marshaller marshaller = jaxbCtx.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_ENCODING, "utf-8");
-        //NOI18N
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(dns, out);
-        out.close();
+        try (FileOutputStream out = new FileOutputStream(config))
+        {
+            JAXBContext jaxbCtx = JAXBContext.newInstance(PACKAGE);
+            Marshaller marshaller = jaxbCtx.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_ENCODING, "utf-8");
+            //NOI18N
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            marshaller.marshal(dns, out);
+        }
     }
 
     public static void storeCache(File file) throws FileNotFoundException, IOException
     {
-        ObjectOutputStream ois = new ObjectOutputStream(new FileOutputStream(file));
-        ois.writeObject(cache);
-        ois.close();
+        log.config("saving %d query answers sets", cache.size());
+        try (ObjectOutputStream ois = new ObjectOutputStream(new FileOutputStream(file)))
+        {
+            ois.writeObject(cache);
+        }
     }
 
     public static void restoreCache(File file) throws FileNotFoundException, IOException, ClassNotFoundException
     {
-        ObjectInputStream iis = new ObjectInputStream(new FileInputStream(file));
-        cache = (ConcurrentHashMapSet<Question, ResourceRecord>) iis.readObject();
-        iis.close();
+        try (ObjectInputStream iis = new ObjectInputStream(new FileInputStream(file)))
+        {
+            cache = (ConcurrentHashMapSet<Question, ResourceRecord>) iis.readObject();
+            log.config("restoring %d query answers sets", cache);
+        }
     }
 
     private static void init() throws UnknownHostException
@@ -479,15 +482,23 @@ public class Cache implements Runnable
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answer.getAnswers())
                 {
-                    NS ns = (NS) rrNS.getRData();
-                    Question qA = new Question(ns.getNsDName(), Constants.A);
-                    getFromCache(qA, answer2);
-                    Question qAAAA = new Question(ns.getNsDName(), Constants.AAAA);
-                    getFromCache(qAAAA, answer2);
-                    for (ResourceRecord rrA : answer2.getAnswers())
+                    RData rData = rrNS.getRData();
+                    if (rData instanceof NS)
                     {
-                        A a = (A) rrA.getRData();
-                        res.add(a.getAddress());
+                        NS ns = (NS) rData;
+                        Question qA = new Question(ns.getNsDName(), Constants.A);
+                        getFromCache(qA, answer2);
+                        Question qAAAA = new Question(ns.getNsDName(), Constants.AAAA);
+                        getFromCache(qAAAA, answer2);
+                        for (ResourceRecord rrA : answer2.getAnswers())
+                        {
+                            RData rd = rrA.getRData();
+                            if (rd instanceof A)
+                            {
+                                A a = (A) rd;
+                                res.add(a.getAddress());
+                            }
+                        }
                     }
                 }
             }
@@ -500,15 +511,23 @@ public class Cache implements Runnable
                 Answer answer2 = new Answer();
                 for (ResourceRecord rrNS : answerSOA.getAnswers())
                 {
-                    SOA soa = (SOA) rrNS.getRData();
-                    Question qA = new Question(soa.getMName(), Constants.A);
-                    getFromCache(qA, answer2);
-                    Question qAAAA = new Question(soa.getMName(), Constants.AAAA);
-                    getFromCache(qAAAA, answer2);
-                    for (ResourceRecord rrA : answer2.getAnswers())
+                    RData rData = rrNS.getRData();
+                    if (rData instanceof SOA)
                     {
-                        A a = (A) rrA.getRData();
-                        res.add(a.address);
+                        SOA soa = (SOA) rData;
+                        Question qA = new Question(soa.getMName(), Constants.A);
+                        getFromCache(qA, answer2);
+                        Question qAAAA = new Question(soa.getMName(), Constants.AAAA);
+                        getFromCache(qAAAA, answer2);
+                        for (ResourceRecord rrA : answer2.getAnswers())
+                        {
+                            RData rd = rrA.getRData();
+                            if (rd instanceof A)
+                            {
+                                A a = (A) rd;
+                                res.add(a.getAddress());
+                            }
+                        }
                     }
                 }
             }
@@ -518,15 +537,15 @@ public class Cache implements Runnable
     }
     private void cleanup()
     {
-        for (Map.Entry<Question, Set<ResourceRecord>> e : cache.entrySet())
+        cache.entrySet().stream().forEach((e) ->
         {
             e.getValue().removeIf(ResourceRecord::isStale);
-        }
+        });
     }
 
     public static void add(MapSet<Question, ResourceRecord> map)
     {
-        for (Entry<Question, Set<ResourceRecord>> e : map.entrySet())
+        map.entrySet().stream().forEach((e) ->
         {
             Question q = e.getKey();
             Set<ResourceRecord> set = e.getValue();
@@ -538,7 +557,7 @@ public class Cache implements Runnable
                 oldSet.removeIf(ResourceRecord::isStale);
             }
             cache.addAll(q, set);
-        }
+        });
     }
 
     /**

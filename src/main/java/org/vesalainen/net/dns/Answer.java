@@ -168,4 +168,10 @@ public class Answer
         return additionals.toArray(new ResourceRecord[additionals.size()]);
     }
 
+    @Override
+    public String toString()
+    {
+        return "Answer{" + "count=" + answers.size() + '}';
+    }
+
 }

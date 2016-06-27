@@ -14,4 +14,5 @@ import java.io.Serializable;
 public interface RData extends Comparable<RData>, Serializable
 {
     void write(MessageWriter writer) throws IOException;
+    int order();
 }
