@@ -32,7 +32,7 @@ public class DNSServer implements Runnable
         this.cache = cache;
         if (cache.exists())
         {
-            Cache.restoreCache(cache);
+            Zones.restoreCache(cache);
         }
     }
     /**
@@ -43,7 +43,7 @@ public class DNSServer implements Runnable
         try
         {
             File ff = new File(args[0]);
-            Cache cc = new Cache(ff);
+            Zones cc = new Zones(ff);
             DNSServer server = null;
             if (args.length > 1)
             {
@@ -58,7 +58,7 @@ public class DNSServer implements Runnable
             l.setLevel(Level.ALL);
             ConsoleHandler handler = new ConsoleHandler();
             handler.setLevel(Level.ALL);
-            MinimalFormatter minimalFormatter = new MinimalFormatter(Cache::getClock);
+            MinimalFormatter minimalFormatter = new MinimalFormatter(Zones::getClock);
             handler.setFormatter(minimalFormatter);
             l.addHandler(handler);
             Runtime.getRuntime().addShutdownHook(new Thread(server));
@@ -81,7 +81,7 @@ public class DNSServer implements Runnable
         {
             try
             {
-                Cache.storeCache(cache);
+                Zones.storeCache(cache);
             }
             catch (FileNotFoundException ex)
             {

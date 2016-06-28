@@ -7,7 +7,6 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
-import org.vesalainen.lang.Primitives;
 
 /**
  *
@@ -17,15 +16,14 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
 {
     private static final long serialVersionUID = 1L;
     private Question question;
-    private int ttl;
     private RData rData;
     private long expires = Long.MAX_VALUE;
 
     public ResourceRecord(DomainName domainName, int type, int ttl, RData rData)
     {
         question = new Question(domainName, type);
-        this.ttl =ttl;
         this.rData = rData;
+        setExpires(ttl);
     }
 
     public ResourceRecord(InetAddress address, int type, int ttl, RData rData)
@@ -33,8 +31,8 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         byte[] aa = address.getAddress();
         DomainName ptrDName = new DomainName(String.format("%d.%d.%d.%d.in-addr.arpa", aa[3], aa[2], aa[1], aa[0]));
         question = new Question(ptrDName, type);
-        this.ttl =ttl;
         this.rData = rData;
+        setExpires(ttl);
     }
 
     public ResourceRecord(MessageReader reader) throws IOException, RCodeException, OPTException
@@ -51,7 +49,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
             throw new RCodeException("CLASS "+clazz+" not supported", RCodeException.NOT_IMPLEMENTED);
         }
         question = new Question(name, type);
-        ttl = reader.read32();
+        int ttl = reader.read32();
         int rdLength = reader.read16();
         reader.mark();
 
@@ -86,6 +84,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         }
         reader.reset();
         reader.skip(rdLength);
+        setExpires(ttl);
     }
 
     public void write(MessageWriter writer) throws IOException
@@ -120,14 +119,9 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
             sb.append("in-addr.arpa");
             DomainName dn = new DomainName(sb.toString());
             Ptr ptr = new Ptr(getName());
-            return new ResourceRecord(dn, Constants.PTR, ttl, ptr);
+            return new ResourceRecord(dn, Constants.PTR, getTtl(), ptr);
         }
         return null;
-    }
-
-    public boolean expired(long current)
-    {
-        return current > expires;
     }
 
     @Override
@@ -169,7 +163,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
      */
     public int getTtl()
     {
-        return ttl;
+        return Math.max(60, (int)(expires - Zones.getClock().millis()) / 1000); //  TODO make configurable
     }
 
     /**
@@ -180,9 +174,9 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         return rData;
     }
 
-    public void setExpires()
+    private void setExpires(int ttl)
     {
-        expires = Cache.getClock().millis()+ttl*1000;
+        expires = Zones.getClock().millis()+ttl*1000;
     }
     /**
      * @return the expires
@@ -194,11 +188,11 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
 
     public boolean isStale()
     {
-        return expires < Cache.getClock().millis();
+        return expires < Zones.getClock().millis();
     }
     public boolean isFresh()
     {
-        return expires >= Cache.getClock().millis();
+        return expires >= Zones.getClock().millis();
     }
     @Override
     public boolean equals(Object oth)

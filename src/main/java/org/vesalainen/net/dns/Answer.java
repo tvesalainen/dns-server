@@ -4,8 +4,8 @@
  */
 package org.vesalainen.net.dns;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -13,17 +13,36 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class Answer
 {
-    private Set<ResourceRecord> answers = new ConcurrentSkipListSet<>();
-    private Set<ResourceRecord> authorities = new ConcurrentSkipListSet<>();
-    private Set<ResourceRecord> additionals = new ConcurrentSkipListSet<>();
+    private List<ResourceRecord> answers = new ArrayList<>();
+    private List<ResourceRecord> authorities = new ArrayList<>();
+    private List<ResourceRecord> additionals = new ArrayList<>();
     private boolean authorative;
 
     public void merge(Answer other)
     {
         authorative = authorative && other.authorative;
+        answers.clear();
+        authorities.clear();
+        additionals.clear();
         answers.addAll(other.answers);
         authorities.addAll(other.authorities);
         additionals.addAll(other.additionals);
+    }
+    public static boolean isFresh(List<ResourceRecord> list)
+    {
+        return list.stream().allMatch(ResourceRecord::isFresh);
+    }
+    public static boolean isResolved(List<ResourceRecord> list)
+    {
+        if (!list.isEmpty())
+        {
+            RData rData = list.get(list.size()-1).getRData();
+            return (
+                    (rData instanceof A) ||
+                    (rData instanceof AAAA)
+                    );
+        }
+        return false;
     }
     public boolean hasAnswer()
     {
@@ -31,43 +50,38 @@ public class Answer
     }
     public boolean hasFreshAnswers()
     {
-        return answers.stream().anyMatch(ResourceRecord::isFresh);
+        return isResolved(answers) && isFresh(answers);
     }
     public void removeStaleAnswers()
     {
         answers.removeIf(ResourceRecord::isStale);
+        authorities.removeIf(ResourceRecord::isStale);
+        additionals.removeIf(ResourceRecord::isStale);
     }
-    public ResourceRecord getAnswerFor(Question question)
+    public boolean isAnswerFor(Question question)
     {
-        if (hasAnswer())
+        DomainName qName = question.getQName();
+        for (ResourceRecord rr : answers)
         {
-            for (ResourceRecord rr : answers)
+            switch (rr.getType())
             {
-                switch (rr.getType())
-                {
-                    default:
-                        if (
-                            question.getQType() == rr.getType() &&
-                            question.getQName().equals(rr.getName())
-                            )
-                        {
-                            return rr;
-                        }
+                case Constants.A:
+                case Constants.AAAA:
+                    return qName.equals(rr.getName());
+                case Constants.CNAME:
+                    if (qName.equals(rr.getName()))
+                    {
+                        CName cname = (CName) rr.getRData();
+                        qName = cname.getName();
+                    }
+                    else
+                    {
+                        return false;
+                    }
                     break;
-                    case Constants.CNAME:
-                        if (
-                            question.getQName().equals(rr.getName())
-                            )
-                        {
-                            CName cname = (CName) rr.getRData();
-                            Question rec = new Question(cname.getName(), question.getQType());
-                            return getAnswerFor(rec);
-                        }
-                    break;
-                }
             }
         }
-        return null;
+        return false;
     }
     public DomainName getCNameFor(Question question)
     {
@@ -94,47 +108,38 @@ public class Answer
     /**
      * @return the answers
      */
-    public Set<ResourceRecord> getAnswers()
+    public List<ResourceRecord> getAnswers()
     {
         return answers;
     }
 
     /**
-     * @param answers the answers to set
-     */
-    public void setAnswers(Set<ResourceRecord> answers)
-    {
-        this.answers = answers;
-    }
-
-    /**
      * @return the authorities
      */
-    public Set<ResourceRecord> getAuthorities()
+    public List<ResourceRecord> getAuthorities()
     {
         return authorities;
     }
 
     /**
-     * @param authorities the authorities to set
-     */
-    public void setAuthorities(Set<ResourceRecord> authorities)
-    {
-        this.authorities = authorities;
-    }
-
-    /**
      * @return the additionals
      */
-    public Set<ResourceRecord> getAdditionals()
+    public List<ResourceRecord> getAdditionals()
     {
         return additionals;
     }
 
-    /**
-     * @param additionals the additionals to set
-     */
-    public void setAdditionals(Set<ResourceRecord> additionals)
+    public void setAnswers(List<ResourceRecord> answers)
+    {
+        this.answers = answers;
+    }
+
+    public void setAuthorities(List<ResourceRecord> authorities)
+    {
+        this.authorities = authorities;
+    }
+
+    public void setAdditionals(List<ResourceRecord> additionals)
     {
         this.additionals = additionals;
     }

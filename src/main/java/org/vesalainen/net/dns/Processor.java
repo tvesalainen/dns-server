@@ -62,7 +62,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         switch (question.getQType())
         {
             case Constants.AXFR:
-                ResponseMessage zoneTransfer = Cache.getZoneTransfer(question.getQName());
+                ResponseMessage zoneTransfer = Zones.getZoneTransfer(question.getQName());
                 if (zoneTransfer != null)
                 {
                     zoneTransfer.setId(msg.getId());
@@ -112,7 +112,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         {
             return answer;
         }
-        if (Cache.resolveAuthorative(question, sender, answer))
+        if (Zones.resolveAuthorative(question, sender, answer))
         {
             fine("Zone hit %s",question);
             answer.setAuthorative(true);
@@ -121,13 +121,14 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         {
             if (recursionDesired)
             {
-                Cache.getFromCache(question, answer);
+                Zones.getFromCache(question, answer);
                 if (answer.hasFreshAnswers())
                 {
                     fine("%s has fresh answers %s",question, answer);
                     answer.removeStaleAnswers();
                     answer.setAuthorative(false);
                     fine("%s has answers after stale removal %s",question, answer);
+                    return answer;
                 }
                 else
                 {
@@ -145,16 +146,19 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                     }
                     catch (TimeoutException ex)
                     {
-                        fine("timeout stale %s used", answer);
+                        fine("%s timeout stale %s used", question, answer);
                     }
                     catch (ExecutionException ex)
                     {
                         throw new IllegalArgumentException(ex);
                     }
                 }
-                fine("%s has answers before fillAdditionals %s",question, answer);
-                fillAdditionals(question, answer);
-                fine("%s has answers after fillAdditionals %s",question, answer);
+                if (!answer.isAnswerFor(question))
+                {
+                    fine("%s has answers before fillAdditionals %s",question, answer);
+                    fillAdditionals(question, answer);
+                    fine("%s has answers after fillAdditionals %s",question, answer);
+                }
             }
         }
         return answer;
@@ -207,7 +211,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                 {
                     CName cname = (CName) rr.getRData();
                     Answer recur = search(new Question(cname.getName(), question.getQType()), true);
-                    answer.getAnswers().addAll(recur.getAnswers());
+                    answer.getAdditionals().addAll(recur.getAnswers());
                 }
                 break;
             }
@@ -215,32 +219,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
     }
     protected void processResponse(Message msg)
     {
-        MapSet<Question,ResourceRecord> map = new HashMapSet<>();
-        ResourceRecord[] ar = msg.getAnswers();
-        if (ar != null)
-        {
-            for (ResourceRecord rr : ar)
-            {
-                map.add(rr.getQuestion(), rr);
-            }
-        }
-        ar = msg.getAuthorities();
-        if (ar != null)
-        {
-            for (ResourceRecord rr : ar)
-            {
-                map.add(rr.getQuestion(), rr);
-            }
-        }
-        ar = msg.getAdditionals();
-        if (ar != null)
-        {
-            for (ResourceRecord rr : ar)
-            {
-                map.add(rr.getQuestion(), rr);
-            }
-        }
-        Cache.add(map);
+        Zones.add(msg.getQuestion(), msg.getAnswer());
         QueryMessage question = QueryMessage.getQuestion(msg, sender);
         if (question != null)
         {
@@ -266,8 +245,8 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
         @Override
         public Answer call() throws Exception
         {
-            Set<InetAddress> nsList = Cache.getNameServerFor(question.getQName());
-            nsList.addAll(Cache.getNameServers());
+            Set<InetAddress> nsList = Zones.getNameServerFor(question.getQName());
+            nsList.addAll(Zones.getNameServers());
             int timeOut = 1;
             for (InetAddress nameServer : nsList)
             {
@@ -277,7 +256,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                 if (response != null)
                 {
                     answer.merge(response.getAnswer());
-                    if (answer.getAnswerFor(question) != null)
+                    if (answer.isAnswerFor(question))
                     {
                         fine("%s succeed after merge %s", question, response.getAnswer());
                         break;
@@ -289,7 +268,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
                         {
                             Answer recu = search(new Question(cname, question.getQType()), true);
                             answer.merge(recu);
-                            if (answer.getAnswerFor(question) != null)
+                            if (answer.isAnswerFor(question))
                             {
                                 fine("%s succeed after recursion merge %s", question, recu);
                                 break;

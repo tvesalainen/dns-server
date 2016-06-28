@@ -390,20 +390,20 @@ public class Message
             case Constants.RCODE_NO_ERROR:
                 break;
             default:
-                sb.append("\nRCODE("+rCode+")");
+                sb.append("\nRCODE(").append(rCode).append(")");
                 break;
         }
         if (question != null)
         {
             sb.append("\nQuestion\n");
-            sb.append(question.toString()+"\n");
+            sb.append(question.toString()).append("\n");
         }
         if (answers != null && answers.length > 0)
         {
             sb.append("Answers\n");
             for (ResourceRecord r : answers)
             {
-                sb.append(r.toString()+"\n");
+                sb.append(r.toString()).append("\n");
             }
         }
         if (authorities != null && authorities.length > 0)
@@ -411,7 +411,7 @@ public class Message
             sb.append("Authorities\n");
             for (ResourceRecord r : authorities)
             {
-                sb.append(r.toString()+"\n");
+                sb.append(r.toString()).append("\n");
             }
         }
         if (additionals != null && additionals.length > 0)
@@ -419,7 +419,7 @@ public class Message
             sb.append("Additionals\n");
             for (ResourceRecord r : additionals)
             {
-                sb.append(r.toString()+"\n");
+                sb.append(r.toString()).append("\n");
             }
         }
         sb.append(")\n");
