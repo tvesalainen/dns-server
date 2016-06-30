@@ -122,42 +122,42 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
             if (recursionDesired)
             {
                 Zones.getFromCache(question, answer);
-                if (answer.hasFreshAnswers())
+                if (answer.isAnswerFor(question))
                 {
-                    fine("%s has fresh answers %s",question, answer);
-                    answer.removeStaleAnswers();
-                    answer.setAuthorative(false);
-                    fine("%s has answers after stale removal %s",question, answer);
-                    return answer;
+                    if (answer.isFresh())
+                    {
+                        fine("%s has fresh answers %s",question, answer);
+                        answer.setAuthorative(false);
+                        return answer;
+                    }
+                    else
+                    {
+                        Future<Answer> future = DNSServer.executor.submit(new Resolver(question, answer));
+                        try
+                        {
+                            future.get(1, TimeUnit.SECONDS);
+                        }
+                        catch (TimeoutException ex)
+                        {
+                            fine("%s timeout stale %s used", question, answer);
+                        }
+                        catch (ExecutionException ex)
+                        {
+                            throw new IllegalArgumentException(ex);
+                        }
+                    }
                 }
                 else
                 {
                     Future<Answer> future = DNSServer.executor.submit(new Resolver(question, answer));
                     try
                     {
-                        if (answer.hasAnswer())
-                        {
-                            future.get(1, TimeUnit.SECONDS);
-                        }
-                        else
-                        {
-                            future.get();
-                        }
-                    }
-                    catch (TimeoutException ex)
-                    {
-                        fine("%s timeout stale %s used", question, answer);
+                        future.get();
                     }
                     catch (ExecutionException ex)
                     {
                         throw new IllegalArgumentException(ex);
                     }
-                }
-                if (!answer.isAnswerFor(question))
-                {
-                    fine("%s has answers before fillAdditionals %s",question, answer);
-                    fillAdditionals(question, answer);
-                    fine("%s has answers after fillAdditionals %s",question, answer);
                 }
             }
         }

@@ -24,6 +24,7 @@ import org.vesalainen.parser.annotation.GenClassname;
 import org.vesalainen.parser.annotation.GrammarDef;
 import org.vesalainen.parser.annotation.ParseMethod;
 import org.vesalainen.parser.annotation.Rule;
+import org.vesalainen.parser.annotation.Rules;
 import org.vesalainen.parser.annotation.Terminal;
 import org.vesalainen.regex.SyntaxErrorException;
 
@@ -64,10 +65,25 @@ public abstract class InetAddressParser
     @ParseMethod(start="address")
     protected abstract InetAddress parseIt(CharSequence text);
     
-    @Rule("inet4Address")
+    @Rules({
+    @Rule("inet4Address"),
+    @Rule("localhost")
+    })
     protected InetAddress address(InetAddress Inet4Address)
     {
         return Inet4Address;
+    }
+    @Rule("'localhost'")
+    protected InetAddress localhost()
+    {
+        try
+        {
+            return InetAddress.getLocalHost();
+        }
+        catch (UnknownHostException ex)
+        {
+            throw new IllegalArgumentException(ex);
+        }
     }
     @Rule("d10 '\\.' d10 '\\.' d10 '\\.' d10")
     protected InetAddress inet4Address(int b1, int b2, int b3, int b4)

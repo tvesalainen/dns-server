@@ -40,27 +40,20 @@ public class DNSServer implements Runnable
      */
     public static void main(String... args)
     {
+        CommandLine cmdLine = new CommandLine();
+        cmdLine.command(args);
         try
         {
-            File ff = new File(args[0]);
-            Zones cc = new Zones(ff);
+            new Zones(cmdLine.getArgument("zone")); // creates static Zones
             DNSServer server = null;
             if (args.length > 1)
             {
-                server = new DNSServer(new File(args[1]));
+                server = new DNSServer(cmdLine.getArgument("cache"));
             }
             else
             {
                 server = new DNSServer();
             }
-            Logger l = Logger.getLogger("org.vesalainen");
-            l.setUseParentHandlers(false);
-            l.setLevel(Level.ALL);
-            ConsoleHandler handler = new ConsoleHandler();
-            handler.setLevel(Level.ALL);
-            MinimalFormatter minimalFormatter = new MinimalFormatter(Zones::getClock);
-            handler.setFormatter(minimalFormatter);
-            l.addHandler(handler);
             Runtime.getRuntime().addShutdownHook(new Thread(server));
             DatagramSocket socket = new DatagramSocket(53);
             executor.submit(new UDPListener(socket));

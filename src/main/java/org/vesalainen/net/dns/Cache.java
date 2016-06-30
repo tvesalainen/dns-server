@@ -18,6 +18,7 @@ package org.vesalainen.net.dns;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.vesalainen.lang.Primitives;
 import org.vesalainen.util.ConcurrentHashMapSet;
 import org.vesalainen.util.MapSet;
 
@@ -78,24 +80,42 @@ public class Cache implements Serializable
     }
     public List<ResourceRecord> list(Question question)
     {
-        return stream(question).collect(Collectors.toList());
+        List<ResourceRecord> list = stream(question).collect(Collectors.toList());
+        int index = 0;
+        for (ResourceRecord rr : list)
+        {
+            int type = rr.getType();
+            if (type == Constants.A || type == Constants.AAAA)
+            {
+                break;
+            }
+            index++;
+        }
+        Collections.sort(list.subList(index, list.size()), (r1, r2)->
+        {
+            return (int)Primitives.signum(r2.getExpires() - r1.getExpires());
+        });
+        if (list.size() > 16)
+        {
+            list = list.subList(0, 16);
+        }
+        return list;
     }
     public Stream<ResourceRecord> stream(Question question)
     {
-        return stream(question.getQName());
-    }
-    public Stream<ResourceRecord> stream(DomainName domain)
-    {
-        return StreamSupport.stream(new RRSpliterator(domain), false);
+        return StreamSupport.stream(new RRSpliterator(question), false);
     }
     private class RRSpliterator extends AbstractSpliterator<ResourceRecord>
     {
         private DomainName name;
+        private int qType;
         private Iterator<ResourceRecord> iterator;
-        public RRSpliterator(DomainName name)
+        private boolean resolved;
+        public RRSpliterator(Question question)
         {
             super(10, 0);
-            this.name = name;
+            this.name = question.getQName();
+            this.qType = question.getQType();
         }
 
         @Override
@@ -106,24 +126,31 @@ public class Cache implements Serializable
                 if (iterator != null && iterator.hasNext())
                 {
                     ResourceRecord rr = iterator.next();
-                    RData rData = rr.getRData();
-                    if (
-                            (rData instanceof A) ||
-                            (rData instanceof AAAA)
-                            )
+                    int type = rr.getType();
+                    switch (type)
                     {
-                        action.accept(rr);
-                        return true;
+                        case Constants.A:
+                        case Constants.AAAA:
+                            if (type == qType)
+                            {
+                                action.accept(rr);
+                                resolved = true;
+                                return true;
+                            }
+                            break;
+                        case Constants.CNAME:
+                            if (resolved)
+                            {
+                                return false;
+                            }
+                            CName cname = (CName) rr.getRData();
+                            name = cname.getName();
+                            iterator = null;
+                            action.accept(rr);
+                            return true;
+                        default:
+                            return false;
                     }
-                    if (rData instanceof CName)
-                    {
-                        CName cname = (CName) rData;
-                        name = cname.getName();
-                        iterator = null;
-                        action.accept(rr);
-                        return true;
-                    }
-                    return false;
                 }
                 else
                 {
@@ -144,6 +171,5 @@ public class Cache implements Serializable
                 }
             }
         }
-        
     }
 }

@@ -127,7 +127,7 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
     @Override
     public String toString()
     {
-        return "RR("+getName().toString()+" "+Constants.type(getType())+" "+Constants.clazz(getClazz())+" ttl="+getTtl()+" "+getRData().toString()+")";
+        return "RR("+getName().toString()+" "+Constants.type(getType())+" "+Constants.clazz(getClazz())+" ttl="+getRealTtl()+" "+getRData().toString()+")";
     }
 
     public Question getQuestion()
@@ -163,7 +163,12 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
      */
     public int getTtl()
     {
-        return Math.max(60, (int)(expires - Zones.getClock().millis()) / 1000); //  TODO make configurable
+        return Math.max(60, getRealTtl()); //  TODO make configurable
+    }
+
+    public int getRealTtl()
+    {
+        return (int)(expires - Zones.getClock().millis()) / 1000; //  TODO make configurable
     }
 
     /**

@@ -14,34 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.vesalainen.net;
+package org.vesalainen.net.dns;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.io.File;
+import org.vesalainen.util.LoggingCommandLine;
 
 /**
  *
  * @author tkv
  */
-public class InetAddressParserTest
+public class CommandLine extends LoggingCommandLine
 {
-    
-    public InetAddressParserTest()
+    public CommandLine()
     {
+        addArgument(File.class, "zone");
+        addArgument(File.class, "cache");
+        setLogPattern("%t/dns-server%g.log");
     }
-
-    @Test
-    public void test1() throws UnknownHostException
-    {
-        InetAddressParser parser = InetAddressParser.newInstance();
-        InetAddress address = parser.parse("192.168.88.1");
-        assertEquals("192.168.88.1", address.getHostAddress());
-        assertNull(parser.parse("bbc.com"));
-        InetAddress localhost = parser.parse("localhost");
-        assertNotNull(localhost);
-        assertEquals(InetAddress.getLocalHost(), localhost);
-    }
-    
 }

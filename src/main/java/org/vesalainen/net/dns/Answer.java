@@ -36,11 +36,9 @@ public class Answer
     {
         if (!list.isEmpty())
         {
-            RData rData = list.get(list.size()-1).getRData();
-            return (
-                    (rData instanceof A) ||
-                    (rData instanceof AAAA)
-                    );
+            ResourceRecord rr = list.get(list.size()-1);
+            int type = rr.getType();
+            return type == Constants.A || type == Constants.AAAA;
         }
         return false;
     }
@@ -48,9 +46,9 @@ public class Answer
     {
         return !answers.isEmpty();
     }
-    public boolean hasFreshAnswers()
+    public boolean isFresh()
     {
-        return isResolved(answers) && isFresh(answers);
+        return isFresh(answers);
     }
     public void removeStaleAnswers()
     {
@@ -63,11 +61,16 @@ public class Answer
         DomainName qName = question.getQName();
         for (ResourceRecord rr : answers)
         {
-            switch (rr.getType())
+            int type = rr.getType();
+            switch (type)
             {
                 case Constants.A:
                 case Constants.AAAA:
-                    return qName.equals(rr.getName());
+                    if (type == question.getQType())
+                    {
+                        return qName.equals(rr.getName());
+                    }
+                    break;
                 case Constants.CNAME:
                     if (qName.equals(rr.getName()))
                     {
