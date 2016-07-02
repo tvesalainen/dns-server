@@ -6,6 +6,8 @@ package org.vesalainen.net.echo;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.logging.Level;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
@@ -35,7 +37,7 @@ public class EchoServer
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            JavaLogging.getLogger(EchoServer.class).log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
     }
 }

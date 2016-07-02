@@ -7,6 +7,7 @@ package org.vesalainen.net.dns;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import org.vesalainen.util.logging.JavaLogging;
 
 /**
@@ -38,7 +39,7 @@ public class UDPListener extends JavaLogging implements Callable<Object>
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
+                log(Level.SEVERE, ex, "%s", ex.getMessage());
             }
         }
     }

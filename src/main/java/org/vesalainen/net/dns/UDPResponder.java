@@ -6,10 +6,9 @@ package org.vesalainen.net.dns;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 import org.vesalainen.util.logging.JavaLogging;
 
 /**
@@ -58,7 +57,7 @@ public class UDPResponder extends JavaLogging implements Callable<Object>
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
+                log(Level.SEVERE, ex, "%s", ex.getMessage());
             }
         }
     }

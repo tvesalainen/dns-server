@@ -16,12 +16,14 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class Echo implements Runnable
+public class Echo extends JavaLogging implements Runnable
 {
     private InetAddress _target;
     private DatagramSocket _socket;
@@ -29,6 +31,7 @@ public class Echo implements Runnable
     private long _timeout;
     public Echo(InetAddress target, long timeout, TimeUnit unit) throws SocketException
     {
+        super(Echo.class);
         _target = target;
         _timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
         _socket = new DatagramSocket(null);
@@ -59,11 +62,11 @@ public class Echo implements Runnable
         catch (SocketTimeoutException ex)
         {
             Date now = new Date(_now);
-            System.err.println(now+": "+_target+" Timeout!");
+            warning("%s: %s Timeout!", now, _target);
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
+            log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
     }
 

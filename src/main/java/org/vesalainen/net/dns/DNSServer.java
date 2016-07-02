@@ -11,24 +11,24 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.vesalainen.util.logging.MinimalFormatter;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class DNSServer implements Runnable
+public class DNSServer extends JavaLogging implements Runnable
 {
     protected static ExecutorService executor = Executors.newCachedThreadPool();
     private File cache;
     public DNSServer()
     {
+        super(DNSServer.class);
     }
     public DNSServer(File cache) throws FileNotFoundException, IOException, ClassNotFoundException
     {
+        super(DNSServer.class);
         this.cache = cache;
         if (cache.exists())
         {
@@ -63,7 +63,7 @@ public class DNSServer implements Runnable
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            cmdLine.getLog().log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
     }
 
@@ -76,13 +76,9 @@ public class DNSServer implements Runnable
             {
                 Zones.storeCache(cache);
             }
-            catch (FileNotFoundException ex)
-            {
-                ex.printStackTrace();
-            }
             catch (IOException ex)
             {
-                ex.printStackTrace();
+                log(Level.SEVERE, ex, "%s", ex.getMessage());
             }
         }
         executor.shutdownNow();

@@ -5,9 +5,13 @@
 package org.vesalainen.net.echo;
 
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
@@ -49,12 +53,13 @@ public class EchoClient implements Runnable
             }
             System.err.println("Echo Client Started "+target.length+" tasks");
         }
-        catch (Exception ex)
+        catch (UnknownHostException | SocketException ex)
         {
-            ex.printStackTrace();
+            JavaLogging.getLogger(EchoClient.class).log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
     }
 
+    @Override
     public void run()
     {
         _scheduler.shutdownNow();

@@ -23,7 +23,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -44,7 +43,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import org.vesalainen.util.ConcurrentHashMapSet;
 import org.vesalainen.util.HashMapSet;
 import org.vesalainen.util.MapSet;
 import org.vesalainen.util.logging.JavaLogging;
@@ -261,14 +259,9 @@ public class Zones implements Runnable
             {
                 msg = ZoneTransfer.getZone(name, new InetSocketAddress(address, 53));
             }
-            catch (IOException ex)
+            catch (IOException | RCodeException ex)
             {
-                ex.printStackTrace();
-                continue;
-            }
-            catch (RCodeException ex)
-            {
-                ex.printStackTrace();
+                log.log(Level.SEVERE, ex, "%s", ex.getMessage());
                 continue;
             }
             ResourceRecord[] ar = msg.getAnswers();

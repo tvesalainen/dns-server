@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
 
 /**
  *
@@ -56,21 +57,9 @@ public class TCPProcessor extends Processor
                 }
             }
         }
-        catch (RCodeException ex)
+        catch (IOException | RCodeException | InterruptedException ex)
         {
-            // TODO
-        }
-        catch (IOException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (InterruptedException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
+            log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
         return null;
     }

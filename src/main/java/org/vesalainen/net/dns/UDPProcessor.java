@@ -7,6 +7,7 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.util.logging.Level;
 
 /**
  *
@@ -15,12 +16,10 @@ import java.net.InetSocketAddress;
 public class UDPProcessor extends Processor
 {
     private static volatile Message previous;
-    private DatagramPacket packet;
     public UDPProcessor(DatagramPacket packet)
     {
         sender = (InetSocketAddress)packet.getSocketAddress();
         data = packet.getData();
-        this.packet = packet;
     }
 
     @Override
@@ -45,17 +44,9 @@ public class UDPProcessor extends Processor
                 processResponse(msg);
             }
         }
-        catch (IOException ex)
+        catch (IOException | InterruptedException | RCodeException ex)
         {
-            ex.printStackTrace();
-        }
-        catch (InterruptedException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
+            log(Level.SEVERE, ex, "%s", ex.getMessage());
         }
         return null;
     }
