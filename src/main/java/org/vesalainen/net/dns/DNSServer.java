@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import javax.xml.bind.JAXBException;
+import org.vesalainen.net.IllegalNetMaskException;
 import org.vesalainen.util.logging.JavaLogging;
 
 /**
@@ -61,7 +63,7 @@ public class DNSServer extends JavaLogging implements Runnable
             executor.submit(new UDPResponder(socket));
             executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
         }
-        catch (Exception ex)
+        catch (JAXBException | IllegalNetMaskException | IOException | RCodeException | ClassNotFoundException | InterruptedException ex)
         {
             cmdLine.getLog().log(Level.SEVERE, ex, "%s", ex.getMessage());
         }

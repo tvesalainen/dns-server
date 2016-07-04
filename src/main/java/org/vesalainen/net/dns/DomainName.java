@@ -6,6 +6,7 @@ package org.vesalainen.net.dns;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -15,46 +16,41 @@ import java.util.List;
 public class DomainName implements Comparable<DomainName>, Serializable
 {
     private static final long serialVersionUID = 1L;
-    private List<String> list = new ArrayList<String>();
+    private List<String> list = new ArrayList<>();
     private String name;
 
     public DomainName(String dn)
     {
-        list = new ArrayList<String>();
         String[] ss = dn.split("\\.");
-        for (String label : ss)
-        {
-            list.add(label);
-        }
-        name = dn.toLowerCase();
+        this.list.addAll(Arrays.asList(ss));
+        this.name = dn.toLowerCase();
     }
 
     public DomainName(List<String> list)
     {
-        this.list = list;
-        name = makeString();
+        this.list.addAll(list);
+        this.name = makeString();
     }
 
     public DomainName(List<String> list, DomainName dn)
     {
-        this.list = list;
+        this.list.addAll(list);
         this.list.addAll(dn.list);
-        name = makeString();
+        this.name = makeString();
     }
 
     public DomainName(DomainName sub, DomainName dn)
     {
-        list = sub.list;
-        list.addAll(dn.list);
-        name = makeString();
+        this.list.addAll(sub.list);
+        this.list.addAll(dn.list);
+        this.name = makeString();
     }
 
     public DomainName(String sub, DomainName dn)
     {
-        list = new ArrayList<String>();
-        list.add(sub);
-        list.addAll(dn.list);
-        name = makeString();
+        this.list.add(sub);
+        this.list.addAll(dn.list);
+        this.name = makeString();
     }
 
     public int getLevel()

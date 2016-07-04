@@ -40,16 +40,6 @@ public class UDPResponder extends JavaLogging implements Callable<Object>
             {
                 Message message = queue.take();
                 byte[] bb = message.toByteArray();
-                if (bb.length > 512)
-                {
-                    message.setAdditionals();
-                    bb = message.toByteArray();
-                }
-                if (bb.length > 512)
-                {
-                    message.setAuthorities();
-                    bb = message.toByteArray();
-                }
                 fine("%s -> %s len=%d", message.getRecipient(), message, bb.length);
                 DatagramPacket packet = new DatagramPacket(bb, bb.length);
                 packet.setSocketAddress(message.getRecipient());

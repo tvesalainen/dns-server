@@ -32,7 +32,7 @@ public class ZoneTransfer extends JavaLogging
         socket.connect(ns);
         InputStream in = socket.getInputStream();
         OutputStream out = socket.getOutputStream();
-        QueryMessage query = new QueryMessage(null, domain, Constants.AXFR);
+        QueryMessage query = new QueryMessage(8192, null, domain, Constants.AXFR);
         byte[] data = query.toByteArray();
         out.write(data.length>>8);
         out.write(data.length & 0xff);

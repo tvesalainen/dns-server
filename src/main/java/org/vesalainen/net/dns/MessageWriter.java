@@ -15,18 +15,24 @@ import java.util.Map;
  */
 public class MessageWriter
 {
-    private byte[] buffer = new byte[4096];
+    private byte[] buffer;
+    private int maxSize;
     private int index;
     private int mark;
-    private Map<DomainName,Integer> domainNameMap = new HashMap<DomainName,Integer>();
+    private Map<DomainName,Integer> domainNameMap = new HashMap<>();
 
-    public MessageWriter()
+    public MessageWriter(int maxSize)
     {
+        this.maxSize = maxSize;
+        this.buffer = new byte[maxSize];
     }
 
     public void write(int value)
     {
-        buffer[index++] = (byte) (value & 0xff);
+        if (index < maxSize)
+        {
+            buffer[index++] = (byte) (value & 0xff);
+        }
     }
 
     public void write16(int value)
@@ -90,6 +96,11 @@ public class MessageWriter
         return Arrays.copyOf(buffer, index);
     }
 
+    public boolean isTruncated()
+    {
+        return index >= maxSize;
+    }
+    
     public int size()
     {
         return index;

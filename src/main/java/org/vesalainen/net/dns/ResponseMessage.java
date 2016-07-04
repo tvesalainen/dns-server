@@ -13,6 +13,7 @@ import java.net.SocketAddress;
 public class ResponseMessage extends Message
 {
     public ResponseMessage(
+            int maxSize,
             int id,
             SocketAddress recipient,
             boolean authorative,
@@ -23,6 +24,7 @@ public class ResponseMessage extends Message
             )
     {
         super(
+        maxSize,
         id,
         recipient,
         false,
@@ -40,6 +42,7 @@ public class ResponseMessage extends Message
         );
     }
     public ResponseMessage(
+            int maxSize,
             int id,
             SocketAddress recipient,
             Question question,
@@ -47,6 +50,7 @@ public class ResponseMessage extends Message
             )
     {
         super(
+        maxSize,
         id,
         recipient,
         false,
@@ -64,6 +68,7 @@ public class ResponseMessage extends Message
         );
     }
     public ResponseMessage(
+            int maxSize,
             int id,
             SocketAddress recipient,
             int rCode,
@@ -71,6 +76,7 @@ public class ResponseMessage extends Message
             )
     {
         super(
+        maxSize,
         id,
         recipient,
         false,

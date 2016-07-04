@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
@@ -41,6 +42,11 @@ public class MessageReader
         in.read(bb);
     }
 
+    public int read8() throws IOException
+    {
+        return in.read();
+    }
+
     public int read16() throws IOException
     {
         int i1 = in.read();
@@ -59,16 +65,17 @@ public class MessageReader
 
     public DomainName readDomainName() throws IOException
     {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         int length = in.read();
         while (length > 0)
         {
             if ((length & 0xc0) == 0xc0)
             {
-                int offset = in.read();
+                int offset = in.read(); // ????
                 offset += ((length & 0x3f)<<8);
                 MessageReader mr = offsetReader(offset);
                 DomainName dn = mr.readDomainName();
+                JavaLogging.getLogger(MessageReader.class).fine("compressed domain name %s", dn);
                 return new DomainName(list, dn);
             }
             byte[] bb = new byte[length];

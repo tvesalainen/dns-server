@@ -7,6 +7,7 @@ package org.vesalainen.net.dns;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
@@ -40,17 +41,14 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
         DomainName name = reader.readDomainName();
         int type = reader.read16();
         int clazz = reader.read16();
-        if (type == Constants.OPT)
-        {
-            throw new OPTException("opt", clazz);
-        }
         if (clazz != Constants.IN)
         {
-            throw new RCodeException("CLASS "+clazz+" not supported", RCodeException.NOT_IMPLEMENTED);
+            throw new RCodeException("CLASS "+clazz+" not supported ("+name+")", RCodeException.NOT_IMPLEMENTED);
         }
         question = new Question(name, type);
         int ttl = reader.read32();
         int rdLength = reader.read16();
+        OPTException optException = null;
         reader.mark();
 
         switch (type)
@@ -79,11 +77,19 @@ public class ResourceRecord implements Serializable, Comparable<ResourceRecord>
             case Constants.AAAA: // mail exchange
                 rData = new AAAA(reader);
                 break;
+            case Constants.OPT:
+                optException = new OPTException("opt", clazz, ttl, rdLength, reader);
+                JavaLogging.getLogger(ResourceRecord.class).fine("OPT %s", optException);
+                break;
             default:
                 throw new RCodeException("TYPE "+getType()+" not supported", RCodeException.NOT_IMPLEMENTED);
         }
         reader.reset();
         reader.skip(rdLength);
+        if (optException != null)
+        {
+            throw optException;
+        }
         setExpires(ttl);
     }
 

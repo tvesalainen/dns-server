@@ -15,8 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.vesalainen.util.HashMapSet;
-import org.vesalainen.util.MapSet;
 import org.vesalainen.util.logging.JavaLogging;
 
 
@@ -36,6 +34,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
     }
 
     public abstract void send(Message msg) throws IOException;
+    public abstract int getMaxSize();
     protected void processQuery(Message msg) throws SocketException, IOException, InterruptedException
     {
         try
@@ -166,6 +165,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
     protected void sendAnswer(Message msg, Answer answer) throws IOException, InterruptedException
     {
         ResponseMessage response = new ResponseMessage(
+                getMaxSize(),
                 msg.getId(),
                 sender,
                 msg.getQuestion(),
@@ -177,6 +177,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
     protected void sendNegative(Message msg, int rCode) throws IOException
     {
         ResponseMessage response = new ResponseMessage(
+                getMaxSize(),
                 msg.getId(),
                 sender,
                 rCode,
@@ -250,7 +251,7 @@ public abstract class Processor extends JavaLogging implements Callable<Object>
             int timeOut = 1;
             for (InetAddress nameServer : nsList)
             {
-                QueryMessage qm = new QueryMessage(new InetSocketAddress(nameServer, 53), question);
+                QueryMessage qm = new QueryMessage(getMaxSize(), new InetSocketAddress(nameServer, 53), question);
                 UDPResponder.send(qm);
                 Message response = qm.waitForAnswer(timeOut++, TimeUnit.SECONDS);
                 if (response != null)

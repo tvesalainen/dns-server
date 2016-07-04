@@ -21,9 +21,10 @@ public class QueryMessage extends Message
 
     private SynchronousQueue<Message> queue = new SynchronousQueue<>();
 
-    public QueryMessage(SocketAddress recipient, String domainName, int type)
+    public QueryMessage(int maxSize, SocketAddress recipient, String domainName, int type)
     {
         super(
+        maxSize,
         nextId++,
         recipient,
         true,
@@ -40,9 +41,10 @@ public class QueryMessage extends Message
         null
         );
     }
-    public QueryMessage(SocketAddress recipient, DomainName domainName, int type)
+    public QueryMessage(int maxSize, SocketAddress recipient, DomainName domainName, int type)
     {
         super(
+        maxSize,
         nextId++,
         recipient,
         true,
@@ -59,9 +61,10 @@ public class QueryMessage extends Message
         null
         );
     }
-    public QueryMessage(SocketAddress recipient, Question question)
+    public QueryMessage(int maxSize, SocketAddress recipient, Question question)
     {
         super(
+        maxSize,
         nextId++,
         recipient,
         true,

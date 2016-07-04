@@ -98,7 +98,7 @@ public class Resolver
         public Set<InetAddress> call() throws Exception
         {
             DatagramSocket socket = socketStore.get();
-            QueryMessage query = new QueryMessage(socket.getLocalSocketAddress(), host, A);
+            QueryMessage query = new QueryMessage(Zones.getMaxUDPPacketSize(), socket.getLocalSocketAddress(), host, A);
             byte[] data = query.toByteArray();
             DatagramPacket packet = new DatagramPacket(data, data.length);
             packet.setAddress(master);

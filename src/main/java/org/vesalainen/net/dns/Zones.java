@@ -70,6 +70,7 @@ public class Zones implements Runnable
     private static final ObjectFactory factory = new ObjectFactory();
     private static Clock clock = Clock.systemUTC();
     private static long cleanupInterval;
+    private static int maxUDPPacketSize;
 
     public Zones(File conf) throws JAXBException, UnknownHostException, IllegalNetMaskException, IOException, RCodeException
     {
@@ -79,6 +80,7 @@ public class Zones implements Runnable
         dns = (Dns) unmarshaller.unmarshal(config); //NOI18N
         BigInteger cui = dns.getCleanupInterval();
         cleanupInterval = cui == null ? 1000 : cui.longValue();
+        maxUDPPacketSize = dns.getMaxUdpPacketSize();
         init();
         initZones();
         initInnerZones();
@@ -87,6 +89,11 @@ public class Zones implements Runnable
         {
             scheduler.scheduleAtFixedRate(this, 0, cleanupInterval, TimeUnit.SECONDS);
         }
+    }
+
+    public static int getMaxUDPPacketSize()
+    {
+        return maxUDPPacketSize;
     }
 
     public static void save() throws JAXBException, FileNotFoundException, IOException
@@ -169,6 +176,7 @@ public class Zones implements Runnable
             }
             zt[zti++] = soaRR;
             ResponseMessage zoneTransfer = new ResponseMessage(
+                    8192,
                     0,
                     null,
                     true,

@@ -13,10 +13,11 @@ import java.util.List;
 /**
  *
  * @author tkv
+ * @see <a href="https://tools.ietf.org/html/rfc1035">DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION</a>
  */
 public class Message
 {
-    private int udpPayload = 512;
+    private OPTException optException;
     /**
      * A 16 bit identifier assigned by the program that
         generates any kind of query.  This identifier is copied
@@ -86,8 +87,10 @@ public class Message
     protected ResourceRecord[] authorities;
     protected ResourceRecord[] additionals;
     private SocketAddress recipient;
+    private int maxSize;
 
     public Message(
+        int maxSize,
         long id,
         SocketAddress recipient,
         boolean query,
@@ -104,6 +107,7 @@ public class Message
         ResourceRecord[] additionals
             )
     {
+        this.maxSize = maxSize;
         this.id = (int) (id & 0xffff);
         this.recipient = recipient;
         if (!query)
@@ -137,6 +141,7 @@ public class Message
 
     public Message(byte[] data) throws IOException, RCodeException
     {
+        this.maxSize = data.length;
         MessageReader reader = new MessageReader(data);
         id = reader.read16();
         int xi = reader.read16();
@@ -168,7 +173,7 @@ public class Message
                 }
                 catch (OPTException ex)
                 {
-                    udpPayload = ex.getUdpPayload();
+                    optException = ex;
                 }
             }
             answers = list.toArray(new ResourceRecord[list.size()]);
@@ -184,7 +189,7 @@ public class Message
                 }
                 catch (OPTException ex)
                 {
-                    udpPayload = ex.getUdpPayload();
+                    optException = ex;
                 }
             }
             authorities = list.toArray(new ResourceRecord[list.size()]);
@@ -200,7 +205,7 @@ public class Message
                 }
                 catch (OPTException ex)
                 {
-                    udpPayload = ex.getUdpPayload();
+                    optException = ex;
                 }
             }
             additionals = list.toArray(new ResourceRecord[list.size()]);
@@ -222,17 +227,8 @@ public class Message
 
     public byte[] toByteArray() throws IOException
     {
-        byte[] bb = bytes();
-        if (bb.length > udpPayload)
-        {
-            tc = 1;
-            bb = bytes();
-        }
-        return bb;
-    }
-    private byte[] bytes() throws IOException
-    {
-        MessageWriter writer = new MessageWriter();
+        tc = 0;
+        MessageWriter writer = new MessageWriter(maxSize);
         writer.write16(id);
         int xi = 0;
         xi |= qr<<15;
@@ -301,7 +297,13 @@ public class Message
                 additional.write(writer);
             }
         }
-        return writer.toByteArray();
+        byte[] array = writer.toByteArray();
+        if (writer.isTruncated())
+        {
+            tc = 1;
+            array[2] |= tc<<1;
+        }
+        return array;
     }
 
     @Override
@@ -392,6 +394,11 @@ public class Message
             default:
                 sb.append("\nRCODE(").append(rCode).append(")");
                 break;
+        }
+        if (optException != null)
+        {
+            sb.append("\nOPT\n");
+            sb.append(optException);
         }
         if (question != null)
         {
@@ -612,6 +619,13 @@ public class Message
      */
     public int getUdpPayload()
     {
-        return udpPayload;
+        if (optException != null)
+        {
+            return optException.getUdpPayload();
+        }
+        else
+        {
+            return 512;
+        }
     }
 }

@@ -16,10 +16,12 @@ import java.util.logging.Level;
 public class UDPProcessor extends Processor
 {
     private static volatile Message previous;
+    private int length;
     public UDPProcessor(DatagramPacket packet)
     {
-        sender = (InetSocketAddress)packet.getSocketAddress();
-        data = packet.getData();
+        this.sender = (InetSocketAddress)packet.getSocketAddress();
+        this.data = packet.getData();
+        this.length = packet.getLength();
     }
 
     @Override
@@ -34,7 +36,7 @@ public class UDPProcessor extends Processor
                 return null;
             }
             previous = msg;
-            fine("UDP %s <- %s", sender, msg);
+            fine("UDP %s <- %s len=%d", sender, msg, length);
             if (msg.isQuery())
             {
                 processQuery(msg);
@@ -55,6 +57,12 @@ public class UDPProcessor extends Processor
     public void send(Message msg)
     {
         UDPResponder.send(msg);
+    }
+
+    @Override
+    public int getMaxSize()
+    {
+        return Zones.getMaxUDPPacketSize();
     }
 
 }
