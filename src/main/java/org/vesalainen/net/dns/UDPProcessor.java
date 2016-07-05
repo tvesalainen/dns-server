@@ -30,7 +30,7 @@ public class UDPProcessor extends Processor
     {
         try
         {
-            Message msg = new Message(data);
+            Message msg = Resolver.resolveMessage(sender, data);
             if (previous != null && previous.equals(msg))
             {
                 fine("Duplicate: %s <- %s", sender, msg);
@@ -44,10 +44,6 @@ public class UDPProcessor extends Processor
             }
             else
             {
-                if (data.length > 512)
-                {
-                    //fine("HEX \n%s", HexDump.toHex(data));
-                }
                 processResponse(msg);
             }
         }

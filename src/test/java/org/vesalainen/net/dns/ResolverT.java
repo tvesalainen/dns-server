@@ -42,8 +42,10 @@ public class ResolverT
     {
         try
         {
-            Resolver resolver = new Resolver(InetAddress.getByName("localhost"));
-            Set<InetAddress> set = resolver.resolv("walter-producer-cdn.api.bbci.co.uk");
+            Resolver resolver = new Resolver(InetAddress.getByName("192.168.88.236"));
+            Set<InetAddress> set = resolver.resolv("b.scorecardresearch.com");
+            assertNotNull(set);
+            assertFalse(set.isEmpty());
         }
         catch (UnknownHostException ex)
         {

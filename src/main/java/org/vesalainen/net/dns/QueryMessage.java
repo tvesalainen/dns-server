@@ -98,8 +98,12 @@ public class QueryMessage extends Message
 
     public static QueryMessage getQuestion(Message message, SocketAddress sender)
     {
-        QueryMessage qm = pending.get(message.getId());
-        if (qm != null && sender.equals(qm.getRecipient()) && message.getId() == qm.getId())
+        return getQuestion(message.getId(), sender);
+    }
+    public static QueryMessage getQuestion(int messageId, SocketAddress sender)
+    {
+        QueryMessage qm = pending.get(messageId);
+        if (qm != null && sender.equals(qm.getRecipient()) && messageId == qm.getId())
         {
             return qm;
         }

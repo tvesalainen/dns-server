@@ -42,7 +42,7 @@ public class ZoneTransfer extends JavaLogging
         int length = (i1<<8)+i2;
         data = new byte[length];
         in.read(data);
-        Message msg = new Message(data);
+        Message msg = Resolver.resolveMessage(ns, data);
         socket.close();
         return msg;
     }

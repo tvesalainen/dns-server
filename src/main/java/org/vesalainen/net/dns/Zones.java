@@ -70,7 +70,7 @@ public class Zones implements Runnable
     private static final ObjectFactory factory = new ObjectFactory();
     private static Clock clock = Clock.systemUTC();
     private static long cleanupInterval;
-    private static int maxUDPPacketSize;
+    private static int maxUDPPacketSize = 512;
 
     public Zones(File conf) throws JAXBException, UnknownHostException, IllegalNetMaskException, IOException, RCodeException
     {

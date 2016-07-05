@@ -10,8 +10,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.vesalainen.util.HexDump;
 
 /**
  *
@@ -19,14 +17,25 @@ import org.vesalainen.util.HexDump;
  */
 public class TCPProcessor extends Processor
 {
-    private Socket socket;
-    private InputStream in;
-    private OutputStream out;
+    protected Socket socket;
+    protected InputStream in;
+    protected OutputStream out;
+    protected boolean continuous = true;
 
-    public TCPProcessor(Socket socket)
+    public TCPProcessor(InetSocketAddress sender) throws IOException
     {
-        sender = (InetSocketAddress) socket.getRemoteSocketAddress();
+        this.sender = sender;
+        this.socket = new Socket(sender.getAddress(), sender.getPort());
+        in = socket.getInputStream();
+        out = socket.getOutputStream();
+    }
+
+    public TCPProcessor(Socket socket) throws IOException
+    {
+        this.sender = (InetSocketAddress) socket.getRemoteSocketAddress();
         this.socket = socket;
+        this.in = socket.getInputStream();
+        this.out = socket.getOutputStream();
     }
 
     @Override
@@ -35,9 +44,7 @@ public class TCPProcessor extends Processor
         try
         {
             fine("TCP from %s", sender);
-            in = socket.getInputStream();
-            out = socket.getOutputStream();
-            while (true)
+            while (continuous)
             {
                 int i1 = in.read();
                 if (i1 == -1)

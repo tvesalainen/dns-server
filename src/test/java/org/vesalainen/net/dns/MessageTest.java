@@ -85,7 +85,7 @@ public class MessageTest
             System.err.println(HexDump.toHex(test));
             Assert.assertArrayEquals(orig, test);
         }
-        catch (IOException | RCodeException ex)
+        catch (IOException | RCodeException | TruncatedException ex)
         {
             Logger.getLogger(MessageTest.class.getName()).log(Level.SEVERE, null, ex);
             fail(ex.getMessage());
@@ -139,7 +139,7 @@ public class MessageTest
             byte[] fromHex = HexDump.fromHex(hd);
             Message msg = new Message(fromHex);
         }
-        catch (IOException | RCodeException ex)
+        catch (IOException | RCodeException | TruncatedException ex)
         {
             Logger.getLogger(MessageTest.class.getName()).log(Level.SEVERE, null, ex);
             fail(ex.getMessage());

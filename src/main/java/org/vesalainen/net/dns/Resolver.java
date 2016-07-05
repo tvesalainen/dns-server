@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,13 +20,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.vesalainen.net.InetAddressParser;
 import static org.vesalainen.net.dns.Constants.*;
+import org.vesalainen.util.HexDump;
 import org.vesalainen.util.ThreadSafeTemporary;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  *
  * @author tkv
  */
-public class Resolver
+public class Resolver extends JavaLogging
 {
     private static final int PacketSize = 512;
     private static final InetAddressParser parser = InetAddressParser.newInstance();
@@ -34,6 +37,7 @@ public class Resolver
 
     public Resolver(InetAddress master) throws SocketException
     {
+        super(Resolver.class);
         this.socketStore = new ThreadSafeTemporary<>(Resolver::createSocket);
         this.master = master;
     }
@@ -70,6 +74,33 @@ public class Resolver
             }
         }
         return null;
+    }
+    public static Message resolveMessage(InetSocketAddress sender, byte[] data) throws IOException, RCodeException
+    {
+        try
+        {
+            return new Message(data);
+        }
+        catch (TruncatedException ex)
+        {
+            try 
+            {
+                TCPResolver resolver = new TCPResolver(sender);
+                Future<Object> future = DNSServer.executor.submit(resolver);
+                QueryMessage query = new QueryMessage(512, sender, ex.getQuestion());
+                resolver.send(query);
+                future.get(5, TimeUnit.SECONDS);
+                return resolver.getResponse();
+            }
+            catch (InterruptedException | ExecutionException ex1) 
+            {
+                throw new IOException(ex1);
+            }
+            catch (TimeoutException ex1)
+            {
+                return null;
+            }
+        }
     }
     private static DatagramSocket createSocket()
     {
@@ -108,15 +139,18 @@ public class Resolver
             data = new byte[512];
             packet = new DatagramPacket(data, data.length);
             socket.receive(packet);
-            Message msg = new Message(packet.getData());
+            Message msg = resolveMessage((InetSocketAddress) packet.getSocketAddress(), packet.getData());
             Set<InetAddress> set = new HashSet<>();
-            for (ResourceRecord rr : msg.getAnswer().getAnswers())
+            if (msg != null)
             {
-                RData rData = rr.getRData();
-                if (rData instanceof A)
+                for (ResourceRecord rr : msg.getAnswer().getAnswers())
                 {
-                    A a = (A) rData;
-                    set.add(a.getAddress());
+                    RData rData = rr.getRData();
+                    if (rData instanceof A)
+                    {
+                        A a = (A) rData;
+                        set.add(a.getAddress());
+                    }
                 }
             }
             return set;

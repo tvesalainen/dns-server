@@ -5,10 +5,18 @@
 package org.vesalainen.net.dns;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -139,7 +147,7 @@ public class Message
         this.additionals = additionals;
     }
 
-    public Message(byte[] data) throws IOException, RCodeException
+    public Message(byte[] data) throws IOException, RCodeException, TruncatedException
     {
         this.maxSize = data.length;
         MessageReader reader = new MessageReader(data);
@@ -162,6 +170,10 @@ public class Message
         int nsCount = reader.read16();
         int arCount = reader.read16();
         question = new Question(reader);
+        if (tc == 1)
+        {
+            throw new TruncatedException(id, question);
+        }
         List<ResourceRecord> list = new ArrayList<ResourceRecord>();
         if (anCount > 0)
         {
