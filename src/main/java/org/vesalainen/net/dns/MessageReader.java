@@ -19,6 +19,7 @@ public class MessageReader
 {
     private byte[] data;
     private InputStream in;
+    private int index;
 
     public MessageReader(byte[] data)
     {
@@ -30,6 +31,7 @@ public class MessageReader
     {
         this.data = data;
         this.in = new ByteArrayInputStream(data, offset, length);
+        this.index = offset;
     }
 
     public MessageReader offsetReader(int offset)
@@ -40,63 +42,64 @@ public class MessageReader
     public void read(byte[] bb) throws IOException
     {
         in.read(bb);
+        index += bb.length;
     }
 
     public int read8() throws IOException
     {
+        index++;
         return in.read();
     }
 
     public int read16() throws IOException
     {
-        int i1 = in.read();
-        int i2 = in.read();
+        int i1 = read8();
+        int i2 = read8();
         return (i1<<8)+i2;
     }
 
     public int read32() throws IOException
     {
-        int i1 = in.read();
-        int i2 = in.read();
-        int i3 = in.read();
-        int i4 = in.read();
+        int i1 = read8();
+        int i2 = read8();
+        int i3 = read8();
+        int i4 = read8();
         return (i1<<24)+(i2<<16)+(i3<<8)+i4;
     }
 
     public DomainName readDomainName() throws IOException
     {
         List<String> list = new ArrayList<>();
-        int length = in.read();
+        int length = read8();
         while (length > 0)
         {
             if ((length & 0xc0) == 0xc0)
             {
-                int offset = in.read(); // ????
+                int offset = read8();
                 offset += ((length & 0x3f)<<8);
                 MessageReader mr = offsetReader(offset);
                 DomainName dn = mr.readDomainName();
-                JavaLogging.getLogger(MessageReader.class).fine("compressed domain name %s", dn);
                 return new DomainName(list, dn);
             }
             byte[] bb = new byte[length];
-            in.read(bb);
+            read(bb);
             list.add(new String(bb));
-            length = in.read();
+            length = read8();
         }
         return new DomainName(list);
     }
 
     public String readCharacterString() throws IOException
     {
-        int length = in.read();
+        int length = read8();
         byte[] bb = new byte[length];
-        in.read(bb);
+        read(bb);
         return new String(bb);
     }
 
     public void mark()
     {
-        in.mark(512);
+        in.mark(Integer.MAX_VALUE);
     }
 
     public void reset() throws IOException
@@ -108,4 +111,11 @@ public class MessageReader
     {
         in.skip(bytes);
     }
+
+    @Override
+    public String toString()
+    {
+        return "MessageReader{" + "at=" + index + " 0x" + Integer.toHexString(index) + '}';
+    }
+    
 }

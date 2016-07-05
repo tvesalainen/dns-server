@@ -72,6 +72,11 @@ public class DomainName implements Comparable<DomainName>, Serializable
         return sb.toString().toLowerCase();
     }
 
+    public boolean isRoot()
+    {
+        return list.isEmpty();
+    }
+    
     public boolean isSubDomainOf(DomainName dn)
     {
         return name.endsWith(dn.name);

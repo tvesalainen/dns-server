@@ -62,19 +62,22 @@ public class MessageWriter
         try
         {
             DomainName dn = name;
-            while (dn != null)
+            if (!dn.isRoot())
             {
-                Integer offset = domainNameMap.get(dn);
-                if (offset != null)
+                while (dn != null)
                 {
-                    offset |= 0xc000;
-                    write16(offset);
-                    return;
+                    Integer offset = domainNameMap.get(dn);
+                    if (offset != null)
+                    {
+                        offset |= 0xc000;
+                        write16(offset);
+                        return;
+                    }
+                    domainNameMap.put(dn, size());
+                    String label = dn.getSubDomain();
+                    writeCharacterString(label);
+                    dn = dn.getDomain();
                 }
-                domainNameMap.put(dn, size());
-                String label = dn.getSubDomain();
-                writeCharacterString(label);
-                dn = dn.getDomain();
             }
             write(0);
         }
@@ -117,4 +120,11 @@ public class MessageWriter
     {
         index += bytes;
     }
+
+    @Override
+    public String toString()
+    {
+        return "MessageWriter{" + "at=" + index + " 0x" + Integer.toHexString(index) + '}';
+    }
+    
 }

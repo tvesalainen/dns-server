@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
+import org.vesalainen.util.HexDump;
 
 /**
  *
@@ -43,6 +44,10 @@ public class UDPProcessor extends Processor
             }
             else
             {
+                if (data.length > 512)
+                {
+                    //fine("HEX \n%s", HexDump.toHex(data));
+                }
                 processResponse(msg);
             }
         }

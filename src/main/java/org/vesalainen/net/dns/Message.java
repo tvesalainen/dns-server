@@ -162,9 +162,9 @@ public class Message
         int nsCount = reader.read16();
         int arCount = reader.read16();
         question = new Question(reader);
+        List<ResourceRecord> list = new ArrayList<ResourceRecord>();
         if (anCount > 0)
         {
-            List<ResourceRecord> list = new ArrayList<ResourceRecord>();
             for (int ii=0;ii<anCount;ii++)
             {
                 try
@@ -180,7 +180,7 @@ public class Message
         }
         if (nsCount > 0)
         {
-            List<ResourceRecord> list = new ArrayList<ResourceRecord>();
+            list.clear();
             for (int ii=0;ii<nsCount;ii++)
             {
                 try
@@ -196,7 +196,7 @@ public class Message
         }
         if (arCount > 0)
         {
-            List<ResourceRecord> list = new ArrayList<ResourceRecord>();
+            list.clear();
             for (int ii=0;ii<arCount;ii++)
             {
                 try

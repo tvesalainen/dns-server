@@ -91,6 +91,11 @@ public class Zones implements Runnable
         }
     }
 
+    static void setClock(Clock clock)
+    {
+        Zones.clock = clock;
+    }
+    
     public static int getMaxUDPPacketSize()
     {
         return maxUDPPacketSize;

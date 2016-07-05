@@ -93,6 +93,7 @@ public class TCPProcessor extends Processor
         out.write(dd.length & 0xff);
         out.write(dd);
         out.flush();
+        /*
         try
         {
             fine("CHECK \n%s", HexDump.toHex(dd));
@@ -103,6 +104,7 @@ public class TCPProcessor extends Processor
         {
             Logger.getLogger(TCPProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }
+         */
     }
 
     @Override
